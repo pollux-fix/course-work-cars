@@ -3,5 +3,5 @@
     "files.associations": {
         "header.h": "c"
     },
-    "git.blame.editorDecoration.enabled": true
+    "git.blame.editorDecoration.enabled": false
 }
