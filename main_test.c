@@ -1,6 +1,8 @@
 // #include "header.h"
 #include "head_test.h"
 
+// #include "list_def.c"
+
 int main(int argc, char **argv)
 {
     srand(time(NULL));

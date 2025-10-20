@@ -106,6 +106,60 @@ typedef struct
     bool just_have_turn;
 } AdvancedCar2;
 
+// вот тут динамический список (пока тестовый вариант)
+
+typedef struct 
+{
+    // общие поля
+    float x; //position for highway
+    float speed;
+    float max_speed;
+    char lane; // текущая полоса
+    char target_lane;
+    float lane_change_progress;
+    char direction_x; // направление движения
+    float color[3];
+    bool is_changing_lane;
+    bool is_braking;
+    float target_speed;
+
+    RoadType road_type;
+
+    union 
+    {
+        struct {
+            CarState state;
+            float fixed_position;
+        } highway;
+
+        struct {
+            float y;
+            char direction_y;
+            bool in_intersection;
+            bool has_priority; // приоритет пересечения перекрестка
+            bool is_turning;
+            TurnDirection turn_direction;
+            float turn_progress;
+            char road_id; // тип дороги (вертикальная или горизонтальная)
+            bool will_turn;
+            TurnDirection planned_turn;
+            bool just_have_turn;
+        } crossroad;
+    } more_info;
+} ListCar;
+
+//узел
+typedef struct CarNode 
+{
+    ListCar car;
+    // struct CarNode *prev; // хз надо ли, но пусть будет
+    struct CarNode *next;
+} CarNode;
+
+// конец описания динамич списка
+
+
+
 // Глобальные переменные
 
 AdvancedCar advanced_cars[MAX_CARS]; // машины на автостраде
