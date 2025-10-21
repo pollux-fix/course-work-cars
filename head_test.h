@@ -11,13 +11,16 @@
 
 // макросы
 
-#define MIN_SPEED 0.05f
-#define MAX_SPEED 0.1f
+//#define MIN_SPEED 0.05f
+#define MIN_SPEED 0.1f
+// #define MAX_SPEED 0.1f
+#define MAX_SPEED 0.2f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 4.0
 
-#define MAX_CARS 15
+//#define MAX_CARS 15
+#define MAX_CARS 1
 #define ROAD_LENGTH 20.0
 #define LANES_PER_DIRECTION 3 // по умолчанию
 #define CAR_LENGTH 2.0
@@ -25,7 +28,7 @@
 #define ACCELERATION 0.002
 #define LANE_CHANGE_SPEED 0.008
 
-#define TURN_SPEED 0.01
+#define TURN_SPEED 0.01f
 #define TURN_RADIUS 1.0
 #define WINDOW_BORDER 20
 
@@ -104,6 +107,11 @@ typedef struct
     bool will_turn;
     TurnDirection planned_turn;
     bool just_have_turn;
+
+        float turn_start_x; // Начальная X-координата при начале поворота
+        float turn_start_y; // Начальная Y-координата при начале поворота
+        float current_display_angle; // Текущий угол поворота для отрисовки машины
+
 } AdvancedCar2;
 
 // Глобальные переменные
