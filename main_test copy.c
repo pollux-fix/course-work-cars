@@ -1,16 +1,6 @@
 // #include "header.h"
 #include "head_test.h"
 
-/* ВАЖНО ДЛЯ ВЕРЫ!
-
-Это тестирование только поворотов на перекрестке
-условия для машин:
-    1. машина всегда одна
-    2. машина игнорирует светофор
-    3. машина всегда поворачивает
-
-Этот код нельзя копировать в основной проект целиком (он испорчен под тест)
-*/
 
 int main(int argc, char **argv)
 {
@@ -1266,8 +1256,8 @@ bool isCollisionImminent(AdvancedCar2 *car1, AdvancedCar2 *car2)
 // выбираем случайную полосу
 char getRandomLane(char road_id, char direction)
 {
-    char lane = lines_count;
-    //while (lane != lines_count && lane != -lines_count)
+    char lane = 0;
+    //while (lane != 1 && lane != -1)
         lane = (rand() % lines_count) + 1;
 
     // Горизонтальная дорога
@@ -1470,25 +1460,6 @@ void drawCrossroadCar(AdvancedCar2 car)
     // Позиция машины
     glTranslatef(car.x, car.y, 0);
 
-    /*// Поворот в зависимости от направления
-    float angle = 0;
-    if (car.direction_x == -1)
-        angle = 180;
-    else if (car.direction_y == 1)
-        angle = 90;
-    else if (car.direction_y == -1)
-        angle = 270;
-
-    // Дополнительный поворот при выполнении маневра
-    if (car.is_turning)
-    {
-        if (car.turn_direction == TURN_LEFT)
-            angle -= car.turn_progress * 90;
-        else
-            angle += car.turn_progress * 90;
-    }
-    glRotatef(angle, 0, 0, 1);*/
-
 
     float display_angle;
     if (car.is_turning) {
@@ -1595,42 +1566,22 @@ void decideTurn(AdvancedCar2 *car)
     if (car->will_turn || car->is_turning)
         return;
 
-    // Определяем приближение к перекрестку
-    bool approaching = false;
-    // Горизонтальная дорога
-    if (car->road_id == 0)
+    // Если машина едет по крайней левой полосе — поворачивает налево
+    if ((car->lane == 1 && (car->direction_x < 0 || car->direction_y > 0)) ||
+        (car->lane == -1 && (car->direction_x > 0 || car->direction_y < 0)))
     {
-        approaching = (car->direction_x == 1 && car->x > intersection_size - 5.0 && car->x < intersection_size) ||
-                      (car->direction_x == -1 && car->x < -intersection_size + 5.0 && car->x > -intersection_size);
-    }
-    // Вертикальная дорога
-    else
-    {
-        approaching = (car->direction_y == 1 && car->y > intersection_size - 5.0 && car->y < intersection_size) ||
-                      (car->direction_y == -1 && car->y < -intersection_size + 5.0 && car->y > -intersection_size);
-    }
-
-    // 25% шанс поворота
-    if (approaching && rand() % 100 < 100)
-    {
-        //car->will_turn = true;
-        //car->planned_turn = (rand() % 2) ? TURN_LEFT : TURN_RIGHT;
-
-//-------------------------------------------------------------------------------------------
         car->will_turn = true;
-
-        // Если машина едет по крайней левой полосе — поворачивает налево
-        if ((car->lane == 1 && (car->direction_x < 0 || car->direction_y > 0)) ||
-            (car->lane == -1 && (car->direction_x > 0 || car->direction_y < 0)))
-        {
-            car->planned_turn = TURN_LEFT;
-        }
-        else
-        {
+        car->planned_turn = TURN_LEFT;
+    }
+    // Если машина едет по крайней левой полосе — поворачивает налево
+    // Машина поворачивает с 50% шансом
+    else if ((rand() % 2) &&
+            ((car->lane == lines_count && (car->direction_x < 0 || car->direction_y > 0)) ||
+            (car->lane == -lines_count && (car->direction_x > 0 || car->direction_y < 0))))
+    {
+            car->will_turn = true;
             car->planned_turn = TURN_RIGHT;
-        }
-//-------------------------------------------------------------------------------------------
-
+    
     }
 }
 
@@ -1644,22 +1595,9 @@ bool canTurn(AdvancedCar2 *car, TurnDirection turn)
     if (turn == TURN_RIGHT && (abs(car->lane) != lines_count)) return false;
 
     // Предсказываем новую полосу после поворота
-
-//-------------------------------------------------------------
     int new_lane = 0;
     if (turn == TURN_LEFT) new_lane = car->lane;
     else  new_lane = -(car->lane);
-//-------------------------------------------------------------
-
-    // // Горизонтальная -> Вертикальная
-    // if (car->road_id == 0) {
-    //     new_lane = (turn == TURN_LEFT) ? ((car->direction_x == 1) ? 1 : -1) : ((car->direction_x == 1) ? -1 : 1);
-    // }
-    // // Вертикальная -> Горизонтальная
-    // else
-    // {
-    //     new_lane = (turn == TURN_LEFT) ? ((car->direction_y == 1) ? -1 : 1) : ((car->direction_y == 1) ? 1 : -1);
-    // }
 
     // Проверяем машины на целевой дороге и полосе
     for (int i = 0; i < car_count; i++)
@@ -1694,7 +1632,6 @@ bool canTurn(AdvancedCar2 *car, TurnDirection turn)
     return true;
 }
 
-// --------------------------------------------------------------------------------------------------
 // совершение поворота
 void executeTurn(AdvancedCar2 *car)
 {
@@ -1704,7 +1641,9 @@ void executeTurn(AdvancedCar2 *car)
         // Условие для начала поворота: центр машины достигает границы перекрестка.
         // Это упрощение. Более точный старт был бы, когда передняя часть машины достигает точки поворота. (ИСПРАВИТЬ!)
         bool at_turn_start_point = false;
-        float turn_threshold = intersection_size;
+        float turn_threshold;
+        if (car->planned_turn == TURN_LEFT) turn_threshold = intersection_size;
+        else turn_threshold = intersection_size + 1.4 - 0.25;
 
         if (car->road_id == 0) { // Горизонтальная дорога
             if (car->direction_x == 1 && car->x >= -turn_threshold) at_turn_start_point = true;
@@ -1719,7 +1658,8 @@ void executeTurn(AdvancedCar2 *car)
         {
             car->is_turning = true;
             car->turn_progress = 0.0f;
-            car->speed *= 0.7f; // Замедление для поворота
+            //car->speed *= 0.7f; // Замедление для поворота
+            car->speed = TURN_SPEED;
             car->turn_direction = car->planned_turn; // Устанавливаем направление поворота
             // Сохраняем начальные координаты для точного расчета дуги
             car->turn_start_x = car->x;
@@ -1735,7 +1675,7 @@ void executeTurn(AdvancedCar2 *car)
 
 
     // Выполнение поворота
-    car->turn_progress += TURN_SPEED;
+    car->turn_progress += 0.01;
     float progress = fmin(1.0f, car->turn_progress); // Ограничиваем прогресс от 0 до 1
 
     float Cx, Cy, R_arc, start_angle, end_angle;
@@ -1747,62 +1687,62 @@ void executeTurn(AdvancedCar2 *car)
     // Определяем параметры поворота в зависимости от направления движения и типа поворота
     if (car->road_id == 0) { // Горизонтальная дорога (въезд слева или справа)
         float entry_y = car->turn_start_y; // Начальная Y-координата (центр полосы)
-        if (car->direction_x == 1) { // Движение вправо (с запада на восток)
+        if (car->direction_x == 1) { // Движение вправо
             if (car->turn_direction == TURN_LEFT) { // Поворот налево (вверх)
                 Cx = -I;
                 Cy = I;
-                R_arc = I - entry_y; // entry_y отрицательна (например, -1), R_arc = I + abs(entry_y)
+                R_arc = I - entry_y;
                 start_angle = 3 * M_PI / 2;
                 end_angle = 2 * M_PI ;
             } else { // Поворот направо (вниз)
                 Cx = -I-1;
                 Cy = -I-1;
-                R_arc = I + entry_y + 1; // entry_y отрицательна, R_arc = I - abs(entry_y)
+                R_arc = I + entry_y + 1;
                 start_angle = M_PI / 2;
-                end_angle = 0; // Эквивалентно 0
+                end_angle = 0;
             }
-        } else { // Движение влево (с востока на запад) 
+        } else { // Движение влево 
             if (car->turn_direction == TURN_LEFT) { // Поворот налево (вниз)
                 Cx = I;
                 Cy = -I;
-                R_arc = I + entry_y; // entry_y положительна (например, 1), R_arc = I + entry_y
+                R_arc = I + entry_y;
                 start_angle = M_PI / 2;
                 end_angle = M_PI;
             } else { // Поворот направо (вверх)
                 Cx = I + 1;
                 Cy = I + 1;
-                R_arc = I - entry_y -1; // entry_y положительна, R_arc = I - entry_y
+                R_arc = I - entry_y -1;
                 start_angle = M_PI / 2;
                 end_angle = 0;
             }
         }
     } else { // Вертикальная дорога (въезд снизу или сверху)
         float entry_x = car->turn_start_x; // Начальная X-координата (центр полосы)
-        if (car->direction_y == 1) { // Движение вверх (с юга на север)
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (на запад)
+        if (car->direction_y == 1) { // Движение вверх
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (влево)
                 Cx = -I;
                 Cy = -I;
-                R_arc = I + entry_x; // entry_x положительна (например, 1), R_arc = I - entry_x
-                start_angle = 0; // Эквивалентно 0
+                R_arc = I + entry_x;
+                start_angle = 0; 
                 end_angle = M_PI / 2;
-            } else { // Поворот направо (на восток)
+            } else { // Поворот направо (вправо)
                 Cx = I + 1;
                 Cy = -I - 1;
-                R_arc = I - entry_x - 1; // entry_x положительна, R_arc = I + entry_x
-                start_angle = 0; // Эквивалентно 0
+                R_arc = I - entry_x - 1;
+                start_angle = 0;
                 end_angle = -M_PI / 2;
             }
-        } else { // Движение вниз (с севера на юг)
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (на восток)
+        } else { // Движение вниз
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вправо)
                 Cx = I;
                 Cy = I;
-                R_arc = I - entry_x; // entry_x отрицательна (например, -1), R_arc = I - abs(entry_x)
+                R_arc = I - entry_x; 
                 start_angle = M_PI;
                 end_angle = 3 * M_PI / 2;
-            } else { // Поворот направо (на запад)
+            } else { // Поворот направо (влево)
                 Cx = -I - 1;
                 Cy = I + 1;
-                R_arc = I + entry_x + 1; // entry_x отрицательна, R_arc = I + abs(entry_x)
+                R_arc = I + entry_x + 1;
                 start_angle = 2 * M_PI;
                 end_angle = 3 * M_PI / 2;
             }
@@ -1813,13 +1753,18 @@ void executeTurn(AdvancedCar2 *car)
     car->x = Cx + R_arc * cos(current_angle);
     car->y = Cy + R_arc * sin(current_angle);
 
-    // Обновляем угол для отрисовки машины (касательная к дуге)
+    //Обновляем угол для отрисовки машины (касательная к дуге)
     if (end_angle > start_angle) { // Против часовой стрелки
         car->current_display_angle = current_angle + M_PI / 2;
     } else { // По часовой стрелке
         car->current_display_angle = current_angle - M_PI / 2;
     }
-    car->current_display_angle = car->current_display_angle * 180.0f / M_PI; // Переводим в градусы
+    // Перевод в градусы (для разных х, чтобы машины не поворачивали задом)
+    if (car->x < 0)
+        car->current_display_angle = car->current_display_angle * 180.0f / M_PI;
+    else
+        car->current_display_angle = current_angle * 180.0f / M_PI + 90.0f;
+
 
     // Завершение поворота
     if (car->turn_progress >= 1.0)
@@ -1876,7 +1821,6 @@ void executeTurn(AdvancedCar2 *car)
         }
     }
 }
-//------------------------------------------------------------------------------------------------
 
 
 // безопасная скорость
@@ -1980,39 +1924,39 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
         return;
     }
 
-    // Проверка приближения к перекрестку при красном свете
-    // if (has_red_light)
-    // {
-    //     float dist_to_stop = fabs(*main_coord) - intersection_size;
-    //     bool approaching = (*main_dir == 1)
-    //                            ? (*main_coord < intersection_size && *main_coord > intersection_size - SAFE_DISTANCE * 3)
-    //                            : (*main_coord > -intersection_size && *main_coord < -intersection_size + SAFE_DISTANCE * 3);
+    //Проверка приближения к перекрестку при красном свете
+    if (has_red_light)
+    {
+        float dist_to_stop = fabs(*main_coord) - intersection_size;
+        bool approaching = (*main_dir == 1)
+                               ? (*main_coord < intersection_size && *main_coord > intersection_size - SAFE_DISTANCE * 3)
+                               : (*main_coord > -intersection_size && *main_coord < -intersection_size + SAFE_DISTANCE * 3);
 
-    //     if (approaching)
-    //     {
-    //         // Начинаем плавное торможение
-    //         float brake_intensity = fmin(1.0, (SAFE_DISTANCE * 3 - dist_to_stop) / SAFE_DISTANCE);
-    //         car->speed = fmax(0, car->speed - brake_intensity * 0.05);
-    //         car->is_braking = true;
-    //         car->has_priority = false;
+        if (approaching)
+        {
+            // Начинаем плавное торможение
+            float brake_intensity = fmin(1.0, (SAFE_DISTANCE * 3 - dist_to_stop) / SAFE_DISTANCE);
+            car->speed = fmax(0, car->speed - brake_intensity * 0.05);
+            car->is_braking = true;
+            car->has_priority = false;
 
-    //         // Полная остановка перед перекрестком
-    //         if (dist_to_stop < 0.5)
-    //         {
-    //             car->speed = 0;
-    //             // Корректируем позицию, чтобы не заехать на перекресток
-    //             if (*main_dir == 1 && *main_coord > intersection_size - 0.5)
-    //             {
-    //                 *main_coord = intersection_size - 0.5;
-    //             }
-    //             else if (*main_dir == -1 && *main_coord < -intersection_size + 0.5)
-    //             {
-    //                 *main_coord = -intersection_size + 0.5;
-    //             }
-    //         }
-    //         return;
-    //     }
-    // }
+            // Полная остановка перед перекрестком
+            if (dist_to_stop < 0.5)
+            {
+                car->speed = 0;
+                // Корректируем позицию, чтобы не заехать на перекресток
+                if (*main_dir == 1 && *main_coord > intersection_size - 0.5)
+                {
+                    *main_coord = intersection_size - 0.5;
+                }
+                else if (*main_dir == -1 && *main_coord < -intersection_size + 0.5)
+                {
+                    *main_coord = -intersection_size + 0.5;
+                }
+            }
+            return;
+        }
+    }
 
     // Проверка столкновений с другими машинами
     for (int i = 0; i < car_count; i++)
@@ -2209,11 +2153,20 @@ void updateCars()
     {
         checkCollisionsCrossroad(&cars[i]);
 
-        // Решение о повороте
-        if (!cars[i].is_turning && !cars[i].will_turn)
+        // Если машина будет поворачивать она должна снижать скорость
+        if (cars[i].will_turn && !cars[i].is_turning) // Машина планирует поворот, но еще не начала его
         {
-            decideTurn(&cars[i]);
+            if ((cars[i].x > -intersection_size * 3 && cars[i].x < -intersection_size) ||
+                (cars[i].x < intersection_size * 3 && cars[i].x > intersection_size) ||
+                (cars[i].y > -intersection_size * 3 && cars[i].y < -intersection_size) ||
+                (cars[i].y < intersection_size * 3 && cars[i].y > intersection_size))
+                
+                if (cars[i].speed > TURN_SPEED)
+                    cars[i].speed *= 0.95;
+                else
+                    cars[i].speed = TURN_SPEED;
         }
+
 
         // Выполнение поворота
         if (cars[i].will_turn || cars[i].is_turning)
@@ -2257,12 +2210,17 @@ void updateCars()
             {
                 cars[i].x += cars[i].speed * cars[i].direction_x;
 
-                if ((cars[i].direction_x == 1 && cars[i].x > WINDOW_BORDER) ||
-                    (cars[i].direction_x == -1 && cars[i].x < -WINDOW_BORDER))
+                // УДАЛЕНИЕ машины вместо телепортации
+                if ((cars[i].direction_x == 1 && cars[i].x > WINDOW_BORDER + 2) ||
+                    (cars[i].direction_x == -1 && cars[i].x < -WINDOW_BORDER - 2))
                 {
-                    cars[i].x = (cars[i].direction_x == 1) ? -WINDOW_BORDER - 1 : WINDOW_BORDER + 1;
-                    cars[i].lane = getRandomLane(cars[i].road_id, cars[i].direction_x);
-                    cars[i].y = cars[i].lane * LINE_WIDTH;
+                    // Удаляем машину из массива
+                    for (int j = i; j < car_count - 1; j++)
+                    {
+                        cars[j] = cars[j + 1];
+                    }
+                    car_count--;
+                    continue; // Пропускаем оставшуюся обработку для удаленной машины
                 }
             }
             // Вертикальная дорога
@@ -2270,12 +2228,17 @@ void updateCars()
             {
                 cars[i].y += cars[i].speed * cars[i].direction_y;
 
-                if ((cars[i].direction_y == 1 && cars[i].y > WINDOW_BORDER) ||
-                    (cars[i].direction_y == -1 && cars[i].y < -WINDOW_BORDER))
+                // УДАЛЕНИЕ машины вместо телепортации
+                if ((cars[i].direction_y == 1 && cars[i].y > WINDOW_BORDER + 2) ||
+                    (cars[i].direction_y == -1 && cars[i].y < -WINDOW_BORDER - 2))
                 {
-                    cars[i].y = (cars[i].direction_y == 1) ? -WINDOW_BORDER - 1 : WINDOW_BORDER + 1;
-                    cars[i].lane = getRandomLane(cars[i].road_id, cars[i].direction_y);
-                    cars[i].x = cars[i].lane * LINE_WIDTH;
+                    // Удаляем машину из массива
+                    for (int j = i; j < car_count - 1; j++)
+                    {
+                        cars[j] = cars[j + 1];
+                    }
+                    car_count--;
+                    continue; // Пропускаем оставшуюся обработку для удаленной машины
                 }
             }
         }
@@ -2291,7 +2254,7 @@ void addCrossroadCar()
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    if (current_time - last_add_time < 1.5)
+    if (current_time - last_add_time < 1.5) // генерация машин раз в N секунд
         return;
 
     last_add_time = current_time;
@@ -2381,6 +2344,14 @@ void addCrossroadCar()
     new_car.will_turn = false;
     new_car.road_id = road_id;
     new_car.just_have_turn = false;
+
+    if (road_id == 0) // Горизонтальная дорога
+        new_car.current_display_angle = (direction == 1) ? 0 : 180;
+    else // Вертикальная дорога
+        new_car.current_display_angle = (direction == 1) ? 90 : 270;
+    
+    // Решение о повороте сразу после добавления
+    decideTurn(&new_car);
 
     cars[car_count++] = new_car;
 }
