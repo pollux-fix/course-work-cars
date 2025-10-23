@@ -49,7 +49,7 @@ typedef struct ListCar
 
 ListCar *highway_car = NULL;
 
-/*
+
 // to right
 ListCar *lane_1 = NULL;
 ListCar *lane_2 = NULL;
@@ -58,12 +58,13 @@ ListCar *lane_3 = NULL;
 ListCar *lane_m1 = NULL;
 ListCar *lane_m2 = NULL;
 ListCar *lane_m3 = NULL;
-*/
+
 
 void drawHighwayCar(CarNode car);
+void updateAdvancedCars(ListCar *head);
 // new
 
-CarNode create_highway_car();
+CarNode create_highway_car(CarDirection direction, char lane);
 void insert_car(ListCar **head, CarNode car);
 ListCar *createCarNode(CarNode car);
 
@@ -692,7 +693,7 @@ void drawHighway()
 
 void initHighwayCar()
 {
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 4; i++)
     {
         addRandomCar();
     }
@@ -795,13 +796,48 @@ void displayHighway()
     glColor3f(0.25f, 0.25f, 1.0f);
 
 
-    struct ListCar *current = highway_car;
-    while (current != NULL)
+    // struct ListCar *current = highway_car;
+    struct ListCar *current1 = lane_1;
+    while (current1 != NULL)
     {
-        drawHighwayCar(current->car);
-        current = current->next;
+        drawHighwayCar(current1->car);
+        current1 = current1->next;
     }
 
+    struct ListCar *current2 = lane_2;
+    while (current2 != NULL)
+    {
+        drawHighwayCar(current2->car);
+        current2 = current2->next;
+    }
+
+    struct ListCar *current3 = lane_3;
+    while (current3 != NULL)
+    {
+        drawHighwayCar(current3->car);
+        current3 = current3->next;
+    }
+
+    struct ListCar *current4 = lane_m1;
+    while (current4 != NULL)
+    {
+        drawHighwayCar(current4->car);
+        current4 = current4->next;
+    }
+
+    struct ListCar *current5 = lane_m2;
+    while (current5 != NULL)
+    {
+        drawHighwayCar(current5->car);
+        current5 = current5->next;
+    }
+
+    struct ListCar *current6 = lane_m3;
+    while (current6 != NULL)
+    {
+        drawHighwayCar(current6->car);
+        current6 = current6->next;
+    }
 
     glutSwapBuffers();
 }
@@ -812,19 +848,24 @@ void updateHighway(int value)
     if (track)
     {
         addRandomCar();
-        updateAdvancedCars();
+        updateAdvancedCars(lane_1);
+        updateAdvancedCars(lane_2);
+        updateAdvancedCars(lane_3);
+        updateAdvancedCars(lane_m1);
+        updateAdvancedCars(lane_m2);
+        updateAdvancedCars(lane_m3);
     }
 
     glutPostRedisplay();
     glutTimerFunc(16, updateHighway, 0);
 }
 
-void updateAdvancedCars()
+void updateAdvancedCars(ListCar* head)
 {
     if (!track)
         return;
 
-    struct ListCar *current = highway_car;
+    struct ListCar *current = head;
     while (current != NULL)
     {
         current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
@@ -850,28 +891,127 @@ void updateAdvancedCars()
 
 void addRandomCar()
 {
-    if (count_cars(highway_car) >= MAX_CARS)
+    // if (count_cars(highway_car) >= MAX_CARS)
+    //     return;
+
+    if (count_cars(lane_1) >= MAX_LANE_CAR)
         return;
+    else 
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    static float last_add_time = 0;
-    float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+        if (current_time - last_add_time < 2.0)
+            return;
 
-    if (current_time - last_add_time < 2.0)
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(RIGHT, 1);
+        insert_car(&lane_1, new_car);
+    }
+
+    if (count_cars(lane_2) >= MAX_LANE_CAR)
         return;
+    else
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    last_add_time = current_time;
+        if (current_time - last_add_time < 2.0)
+            return;
 
-    CarNode new_car = create_highway_car();
-    insert_car(&highway_car, new_car);
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(RIGHT, 2);
+        insert_car(&lane_2, new_car);
+    }
+
+    if (count_cars(lane_3) >= MAX_LANE_CAR)
+        return;
+    else
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+        if (current_time - last_add_time < 2.0)
+            return;
+
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(RIGHT, 3);
+        insert_car(&lane_3, new_car);
+    }
+
+    if (count_cars(lane_m1) >= MAX_LANE_CAR)
+        return;
+    else
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+        if (current_time - last_add_time < 2.0)
+            return;
+
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(LEFT, 1);
+        insert_car(&lane_m1, new_car);
+    }
+
+    if (count_cars(lane_m2) >= MAX_LANE_CAR)
+        return;
+    else
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+        if (current_time - last_add_time < 2.0)
+            return;
+
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(LEFT, 2);
+        insert_car(&lane_m2, new_car);
+    }
+
+    if (count_cars(lane_m3) >= MAX_LANE_CAR)
+        return;
+    else
+    {
+        static float last_add_time = 0;
+        float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+        if (current_time - last_add_time < 2.0)
+            return;
+
+        last_add_time = current_time;
+
+        CarNode new_car = create_highway_car(LEFT, 3);
+        insert_car(&lane_m3, new_car);
+    }
+
+    // static float last_add_time = 0;
+    // float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+
+    // if (current_time - last_add_time < 2.0)
+    //     return;
+
+    // last_add_time = current_time;
+
+    // CarNode new_car = create_highway_car();
+    // insert_car(&highway_car, new_car);
+
 }
 
-CarNode create_highway_car()
+CarNode create_highway_car(CarDirection direction, char lane)
 {
     CarNode car = {0}; // memset 0
 
-    car.direction = (rand() % 2) ? RIGHT : LEFT;
+    car.direction = direction;
+    car.lane = lane;
+    // car.direction = (rand() % 2) ? RIGHT : LEFT;
 
-    car.lane = (rand() % lines_count) + 1;
+    // car.lane = (rand() % lines_count) + 1;
     // switch (lane)
     // {
     // case 1:

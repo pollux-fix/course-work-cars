@@ -1,6 +1,13 @@
 // #include "header.h"
 #include "head_test.h"
 
+/*
+добавлены тут, чтобы из заголовочного не комментить каждый раз
+потому что в файле лист_кар_тест они немного поменяны
+*/
+int car_count = 0; // текущее количество машин, которые инициализированы
+void drawHighwayCar(AdvancedCar car);
+void updateAdvancedCars();
 
 int main(int argc, char **argv)
 {

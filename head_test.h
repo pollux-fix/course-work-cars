@@ -21,6 +21,7 @@
 #define SAFE_DISTANCE 4.0
 
 #define MAX_CARS 15
+#define MAX_LANE_CAR 2
 //#define MAX_CARS 1
 #define ROAD_LENGTH 20.0
 #define LANES_PER_DIRECTION 3 // по умолчанию
@@ -167,7 +168,7 @@ void displayTime(float x, float y);
 void drawHighway();
 void initHighwayCar();
 
-// void drawHighwayCar(AdvancedCar car);  // для запуска теста со списком
+// void drawHighwayCar(AdvancedCar car);
 void displayHighway();
 void updateHighway(int value);
 
@@ -175,7 +176,7 @@ float calculateSafeSpeed(AdvancedCar *car, float distance);
 bool isSafeToChangeLane(AdvancedCar *car, char new_lane, float *safe_speed);
 void checkCollisionAvoidance(AdvancedCar *car);
 void decideLaneChange(AdvancedCar *car);
-void updateAdvancedCars();
+// void updateAdvancedCars();
 void addRandomCar();
 
 // перекресток
