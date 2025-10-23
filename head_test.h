@@ -20,8 +20,8 @@
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 4.0
 
-//#define MAX_CARS 15
 #define MAX_CARS 15
+//#define MAX_CARS 1
 #define ROAD_LENGTH 20.0
 #define LANES_PER_DIRECTION 3 // по умолчанию
 #define CAR_LENGTH 2.0
@@ -134,7 +134,7 @@ char button_hover = -1;     // флаг наведения мыши на кно�
 bool in_simulation = false; // флаг определения начала моделирования
 double last_time = 0.0;     // последнее время (для режима паузы)
 
-int car_count = 0; // текущее количество машин, которые инициализированы
+// int car_count = 0; // текущее количество машин, которые инициализированы
 
 bool horizontal_green = true; // Светофор для горизонтальной дороги
 float last_light_switch = 0;
@@ -167,7 +167,7 @@ void displayTime(float x, float y);
 void drawHighway();
 void initHighwayCar();
 
-void drawHighwayCar(AdvancedCar car);
+// void drawHighwayCar(AdvancedCar car);  // для запуска теста со списком
 void displayHighway();
 void updateHighway(int value);
 

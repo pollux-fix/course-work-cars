@@ -33,11 +33,11 @@
 				"${fileBasenameNoExtension}.exe",
 				"${file}",
 				"-I",
-				//"C:\\Users\\V\\.vscode\\projects\\cars_project\\include",  // корректный путь до заголовочных файлов
-				"C:\\Users\\operator\\.vscode\\projects\\cars_project\\include",  // корректный путь до заголовочных файлов
+				"C:\\Users\\V\\.vscode\\projects\\cars_project\\include",  // корректный путь до заголовочных файлов
+				//"C:\\Users\\operator\\.vscode\\projects\\cars_project\\include",  // корректный путь до заголовочных файлов
 				"-L",
-				//"C:\\Users\\V\\.vscode\\projects\\cars_project\\lib",   // корректный путь до библиотек
-				"C:\\Users\\operator\\.vscode\\projects\\cars_project\\lib",   // корректный путь до библиотек
+				"C:\\Users\\V\\.vscode\\projects\\cars_project\\lib",   // корректный путь до библиотек
+				//"C:\\Users\\operator\\.vscode\\projects\\cars_project\\lib",   // корректный путь до библиотек
 				"-lfreeglut",
 				"-lopengl32",
 				"-lglu32"
