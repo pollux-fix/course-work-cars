@@ -49,6 +49,17 @@ typedef struct ListCar
 
 ListCar *highway_car = NULL;
 
+/*
+// to right
+ListCar *lane_1 = NULL;
+ListCar *lane_2 = NULL;
+ListCar *lane_3 = NULL;
+// to left
+ListCar *lane_m1 = NULL;
+ListCar *lane_m2 = NULL;
+ListCar *lane_m3 = NULL;
+*/
+
 void drawHighwayCar(CarNode car);
 // new
 
