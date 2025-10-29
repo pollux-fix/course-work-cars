@@ -8,7 +8,6 @@
 */
 
 // куда едет машина - направо/налево
-
 typedef enum CarDirection
 {
     RIGHT,
@@ -17,14 +16,14 @@ typedef enum CarDirection
 
 // на какой полосе из всех машина находится
 // макс сколько полос может быть
-typedef enum CarLane
-{
-    ONE,
-    TWO,
-    THREE,
-    FOUR,
-    FIVE
-} CarLane;
+// typedef enum CarLane
+// {
+//     ONE,
+//     TWO,
+//     THREE,
+//     FOUR,
+//     FIVE
+// } CarLane;
 
 typedef struct
 {
@@ -51,8 +50,6 @@ typedef struct ListCar
     // struct ListCar *prev;
     struct ListCar *next;
 } ListCar;
-
-ListCar *highway_car = NULL;
 
 
 // to right
@@ -105,6 +102,8 @@ int main(int argc, char **argv)
     return EXIT_SUCCESS;
 }
 
+
+// ТУТ ПРОСТО ПРОВЕРИТЬ ВЫЗОВ ФУНКЦИЙ ПРЯМОЙ ДОРОГИ - КОГДА ВСТРАИВАТЬ БУДУ
 /*МЕНЮ И КНОПКИ*/
 
 // обработка нажатия мыши
@@ -645,6 +644,9 @@ void init()
     srand(time(NULL));
 }
 
+
+
+// ВОТ ТУТ УЖЕ ИЗМЕНЕНИЯ
 /* ПРЯМАЯ ДОРОГА */
 
 // отрисовка прямой дороги
