@@ -8,25 +8,27 @@
 int car_count = 0; // текущее количество машин, которые инициализированы
 void drawHighwayCar(AdvancedCar car);
 void updateAdvancedCars();
+float calculateSafeSpeed(AdvancedCar *car, float distance);
+void checkCollisionAvoidance(AdvancedCar *car);
 
-int main(int argc, char **argv)
-{
-    srand(time(NULL));
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowPosition(400, 50);
-    glutInitWindowSize(900, 700);
-    glutCreateWindow("Road Simulation");
+// int main(int argc, char **argv)
+// {
+//     srand(time(NULL));
+//     glutInit(&argc, argv);
+//     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+//     glutInitWindowPosition(400, 50);
+//     glutInitWindowSize(900, 700);
+//     glutCreateWindow("Road Simulation");
 
-    glutDisplayFunc(menuWindow);
-    glutMouseFunc(processMouseClick);
+//     glutDisplayFunc(menuWindow);
+//     glutMouseFunc(processMouseClick);
 
-    glutPassiveMotionFunc(processMouseMove);
-    glutKeyboardFunc(processNormalKeys);
-    glutMainLoop();
+//     glutPassiveMotionFunc(processMouseMove);
+//     glutKeyboardFunc(processNormalKeys);
+//     glutMainLoop();
 
-    return EXIT_SUCCESS;
-}
+//     return EXIT_SUCCESS;
+// }
 
 /*МЕНЮ И КНОПКИ*/
 

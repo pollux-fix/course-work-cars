@@ -172,9 +172,9 @@ void initHighwayCar();
 void displayHighway();
 void updateHighway(int value);
 
-float calculateSafeSpeed(AdvancedCar *car, float distance);
+// float calculateSafeSpeed(AdvancedCar *car, float distance);
 bool isSafeToChangeLane(AdvancedCar *car, char new_lane, float *safe_speed);
-void checkCollisionAvoidance(AdvancedCar *car);
+// void checkCollisionAvoidance(AdvancedCar *car);
 void decideLaneChange(AdvancedCar *car);
 // void updateAdvancedCars();
 void addRandomCar();
