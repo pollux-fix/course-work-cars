@@ -36,7 +36,12 @@ typedef struct
 
     float color[3];
     float position;
+
     bool is_braking;
+    float target_speed; // скорость после торможения
+    char target_lane; // для перестроения
+    float lane_change_progress;
+    bool is_changing_lane;
 
 } CarNode;
 
@@ -868,6 +873,8 @@ void updateAdvancedCars(ListCar* head)
     struct ListCar *current = head;
     while (current != NULL)
     {
+// ТУТ ОБРАБОТКА ТОРМОЖЕНИЙ И ПЕРЕСТРОЕНИЙ - ФУНКЦИИ СООТВ
+
         current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
         // Если машина выехала за пределы дороги
         if ((current->car.direction == RIGHT && current->car.position > WINDOW_BORDER) ||
@@ -891,9 +898,6 @@ void updateAdvancedCars(ListCar* head)
 
 void addRandomCar()
 {
-    // if (count_cars(highway_car) >= MAX_CARS)
-    //     return;
-
     if (count_cars(lane_1) >= MAX_LANE_CAR)
         return;
     else 
@@ -1009,29 +1013,6 @@ CarNode create_highway_car(CarDirection direction, char lane)
 
     car.direction = direction;
     car.lane = lane;
-    // car.direction = (rand() % 2) ? RIGHT : LEFT;
-
-    // car.lane = (rand() % lines_count) + 1;
-    // switch (lane)
-    // {
-    // case 1:
-    //     car.lane = ONE;
-    //     break;
-    // case 2:
-    //     car.lane = TWO;
-    //     break;
-    // case 3:
-    //     car.lane = THREE;
-    //     break;
-    // case 4:
-    //     car.lane = FOUR;
-    //     break;
-    // case 5:
-    //     car.lane = FIVE;
-    //     break;
-    // default:
-    //     break;
-    // }
 
     car.is_braking = false;
     car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
@@ -1087,4 +1068,218 @@ void insert_car(ListCar **head, CarNode car)
         }
         current->next = new;
     }
+}
+
+/*
+ВОТ ТУТ ИЗМЕНИТЬ НА СПИСОК + ВСТРОИТЬ
+*/
+
+// подсчет оптимальной скорости в торможении
+float calculateSafeSpeed(CarNode car, float distance)
+{
+    // на основе дистанции мд машинами
+    float safe_speed = car.max_speed * (distance / (SAFE_DISTANCE * 2));
+    return fmax(MIN_SPEED, fmin(car.max_speed, safe_speed));
+}
+
+// проверка для смены полосы
+ // МОЖНО ПЕРЕДАВАТЬ КАР_НОД, ПОТОМУ ЧТО СРАВНЕНИЕ С ДРУГОЙ ПОЛОСОЙ - ПО ПОЗИЦИИ
+bool isSafeToChangeLane(AdvancedCar *car, char new_lane, float *safe_speed)
+{
+    *safe_speed = car->max_speed;
+    bool is_safe = true;
+
+    for (int i = 0; i < car_count; i++)
+    {
+        if (&advanced_cars[i] == car)
+            continue;
+
+        // проверяем только машины в том же направлении
+        if (advanced_cars[i].direction != car->direction)
+            continue;
+
+        // Определяем полосу проверяемой машины (с учетом перестроения)
+        char other_lane = advanced_cars[i].is_changing_lane ? \
+        (char)(advanced_cars[i].lane * (1 - advanced_cars[i].lane_change_progress) + advanced_cars[i].target_lane \
+         * advanced_cars[i].lane_change_progress) : advanced_cars[i].lane;
+
+        // если машина на желаемой полосе
+        if (abs(other_lane - new_lane) < 1.5)
+        {
+            float dist = fabs(advanced_cars[i].position - car->position);
+
+            // относительное положение
+            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
+                               (car->direction == -1 && advanced_cars[i].position < car->position);
+
+            if (is_in_front && dist < SAFE_DISTANCE * 3)
+            {
+                // подсчет безопасной скорости для этой машины
+                float this_safe_speed = calculateSafeSpeed(car, dist);
+                if (this_safe_speed < *safe_speed)
+                {
+                    *safe_speed = this_safe_speed;
+                }
+
+                if (dist < SAFE_DISTANCE * 1.5)
+                {
+                    is_safe = false;
+                }
+            }
+        }
+    }
+
+    return is_safe;
+}
+
+// проверка для предотвращения дтп
+ // ЗДЕСЬ НАДО ЛИСТ_КАР ПЕРЕДАВАТЬ, ПОТОМУ ЧТО ПРОСМОТР В ТЕКУЩЕЙ ПОЛОСЕ
+void checkCollisionAvoidance(AdvancedCar *car)
+{
+    // минимальная допустимая дистанция
+    float min_distance = SAFE_DISTANCE * 3;
+    car->is_braking = false;
+
+    for (int i = 0; i < car_count; i++)
+    {
+        // текущую машину не проверяем
+        if (&advanced_cars[i] == car)
+            continue;
+
+        // Рассчитываем позиции с учетом перестроения
+        float car_lane = car->lane;
+        if (car->is_changing_lane)
+        {
+            car_lane = car->lane * (1 - car->lane_change_progress) + car->target_lane * car->lane_change_progress;
+        }
+
+        float other_lane = advanced_cars[i].lane;
+        if (advanced_cars[i].is_changing_lane)
+        {
+            other_lane = advanced_cars[i].lane * (1 - advanced_cars[i].lane_change_progress) + \ 
+            advanced_cars[i].target_lane * advanced_cars[i].lane_change_progress;
+        }
+
+        // Проверяем только машины в том же направлении
+        if (advanced_cars[i].direction != car->direction)
+            continue;
+
+        // Проверяем расстояние по полосе
+        float lane_distance = fabs(car_lane - other_lane) * LINE_WIDTH;
+        if (lane_distance < 0.8)
+        {
+            // Если машины на одной или соседних полосах
+            float path_distance = fabs(advanced_cars[i].position - car->position);
+
+            // Определяем относительное положение
+            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
+                               (car->direction == -1 && advanced_cars[i].position < car->position);
+
+            if (is_in_front && path_distance < min_distance)
+            {
+                min_distance = path_distance;
+
+                // Если машина впереди ближе безопасной дистанции
+                if (path_distance < SAFE_DISTANCE * 1.5)
+                {
+                    car->is_braking = true;
+                    float safe_speed = calculateSafeSpeed(car, path_distance);
+
+                    // Плавное торможение до безопасной скорости
+                    if (car->speed > safe_speed)
+                    {
+                        car->speed = fmax(safe_speed, car->speed * BRAKING_FACTOR);
+                    }
+
+                    // Если очень близко - экстренное торможение
+                    if (path_distance < SAFE_DISTANCE * 0.7)
+                    {
+                        car->speed *= 0.8;
+                    }
+                }
+            }
+        }
+    }
+
+    // Плавное ускорение, если нет препятствий
+    if (!car->is_braking && car->speed < car->max_speed)
+    {
+        car->speed += ACCELERATION;
+        car->speed = fmin(car->speed, car->max_speed);
+    }
+}
+
+// решение о смене полосы
+ // ПЕРЕДАЧА 1 (2) ЛИСТ_КАР С ТЕКУЩЕЙ И СМЕННОЙ ПОЛОСАМИ
+void decideLaneChange(AdvancedCar *car)
+{
+    // Если машина уже перестраивается - завершаем
+    if (car->is_changing_lane)
+        return;
+
+    bool slow_car_ahead = false;
+    float min_distance = SAFE_DISTANCE * 3;
+
+    // Проверяем все машины на дороге
+    for (int i = 0; i < car_count; i++)
+    {
+        // Пропускаем текущую машину
+        if (&advanced_cars[i] == car)
+            continue;
+
+        // Проверяем только машины на той же полосе и в том же направлении
+        if (advanced_cars[i].lane == car->lane &&
+            advanced_cars[i].direction == car->direction)
+        {
+            // Вычисляем дистанцию между машинами
+            float dist = fabs(advanced_cars[i].position - car->position);
+
+            // Определяем, находится ли машина впереди
+            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
+                               (car->direction == -1 && advanced_cars[i].position < car->position);
+
+            // Если машина впереди и ближе минимальной дистанции
+            if (is_in_front && dist < min_distance)
+            {
+                min_distance = dist;
+
+                // Проверяем условия для "медленной машины":
+                if (dist < SAFE_DISTANCE * 2 &&
+                    advanced_cars[i].speed < car->max_speed * 0.8)
+                {
+                    slow_car_ahead = true;
+                }
+            }
+        }
+    }
+
+    // Если нет медленных машин впереди - завершаем
+    if (!slow_car_ahead)
+        return;
+
+    // Проверяем обе соседние полосы
+    for (int dl = -1; dl <= 1; dl += 2)
+    {
+        // Вычисляем номер новой полосы
+        int new_lane = car->lane + dl;
+
+        // Проверки корректности полосы
+        if (new_lane * car->direction <= 0 ||
+            abs(new_lane) > lines_count)
+            continue;
+
+        // Проверяем безопасность перестроения
+        float safe_speed;
+        if (isSafeToChangeLane(car, new_lane, &safe_speed))
+        {
+            // Если перестроение безопасно, инициализируем его
+            car->target_lane = new_lane;
+            car->is_changing_lane = true;
+            car->lane_change_progress = 0.0;
+            car->target_speed = safe_speed;
+            return;
+        }
+    }
+
+    // Если не найдено безопасных полос для перестроения - остаемся на текущей полосе
 }

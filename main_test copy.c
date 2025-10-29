@@ -212,6 +212,8 @@ void menuWindow()
     for (int i = 0; i < strlen(str3); i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, str3[i]);
 
+    drawText(-0.3f, -0.3f, "(test) for highway - only 3 lanes available");
+
     // Кнопки выбора количества полос
     for (int i = 1; i <= 5; i++)
     {
