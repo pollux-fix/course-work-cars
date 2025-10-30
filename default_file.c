@@ -1,4 +1,14 @@
-#include "header.h"
+#include "head_test.h"
+
+#define MIN_SPEED 0.05f
+#define MAX_SPEED 0.1f
+
+int car_count = 0; // текущее количество машин, которые инициализированы
+
+void drawHighwayCar(AdvancedCar car);
+void updateAdvancedCars();
+float calculateSafeSpeed(AdvancedCar *car, float distance);
+void checkCollisionAvoidance(AdvancedCar *car);
 
 int main(int argc, char **argv)
 {

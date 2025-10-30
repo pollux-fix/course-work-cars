@@ -1,6 +1,9 @@
 #include "head_test.h"
 #include "head_list.h"
 
+#define MIN_SPEED 0.2f
+#define MAX_SPEED 0.3f
+
 /*
 добавлены тут, чтобы из заголовочного не комментить каждый раз
 потому что в файле лист_кар_тест они немного поменяны
