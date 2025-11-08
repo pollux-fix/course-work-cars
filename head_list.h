@@ -47,14 +47,26 @@ typedef struct ListCar
     struct ListCar *next;
 } ListCar;
 
-// to right
-ListCar *lane_1 = NULL;
-ListCar *lane_2 = NULL;
-ListCar *lane_3 = NULL;
-// to left
-ListCar *lane_m1 = NULL;
-ListCar *lane_m2 = NULL;
-ListCar *lane_m3 = NULL;
+// // to right
+// ListCar *lane_1 = NULL;
+// ListCar *lane_2 = NULL;
+// ListCar *lane_3 = NULL;
+// // to left
+// ListCar *lane_m1 = NULL;
+// ListCar *lane_m2 = NULL;
+// ListCar *lane_m3 = NULL;
+
+//------------------------------------------------------------
+// Массив указателей на списки полос
+extern ListCar *lanes[];
+extern int lane_count;
+
+// Функции для работы с полосами
+void init_lanes(int lanes_per_direction);
+void free_all_lanes(void);
+int get_lane_index(CarDirection direction, char lane_number);
+ListCar* get_lane(CarDirection direction, char lane_number);
+//------------------------------------------------------
 
 void drawHighwayCar(CarNode car);
 void updateAdvancedCars(ListCar *head);
@@ -66,3 +78,10 @@ void insert_car(ListCar **head, CarNode car);
 ListCar *createCarNode(CarNode car);
 
 int count_cars(ListCar *head);
+
+//------------------------------------------------------
+// Новые универсальные функции
+void for_each_lane(void (*func)(ListCar*));
+void update_all_cars(void);
+void draw_all_cars(void);
+//------------------------------------------------------

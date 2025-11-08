@@ -11,10 +11,12 @@
 
 // макросы
 
+#define MAX_LANES 10  // Максимум 5 полос в каждую сторону
+
 //#define MIN_SPEED 0.05f
-// #define MIN_SPEED 0.2f
+#define MIN_SPEED 0.2f
 // #define MAX_SPEED 0.1f
-// #define MAX_SPEED 0.3f
+#define MAX_SPEED 0.3f
 #define TURN_SPEED 0.15f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f

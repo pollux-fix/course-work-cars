@@ -1,3 +1,5 @@
+// Реализация с поворотами но бе списков
+
 #include "head_test.h"
 #include "head_list.h"
 

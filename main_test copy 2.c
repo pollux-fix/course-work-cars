@@ -1,16 +1,260 @@
-// проект 1-го курса
+// объединение поворотов и списков (основной файл) 
+
 
 #include "head_test.h"
+#include "head_list.h"
 
-#define MIN_SPEED 0.05f
-#define MAX_SPEED 0.1f
+// #define MIN_SPEED 0.2f
+// #define MAX_SPEED 0.3f
 
-int car_count = 0; // текущее количество машин, которые инициализированы
+//-----------------------------------------------------------------
+// Реализация массива полос для перекрестка
+ListCrossroadCar *crossroad_lanes[2][2][MAX_LANES] = {{{NULL}}}; // [road_id][direction][lane]
+int crossroad_lane_count = 6;  // По умолчанию 3 полосы в каждую сторону
 
-void drawHighwayCar(AdvancedCar car);
-void updateAdvancedCars();
-float calculateSafeSpeed(AdvancedCar *car, float distance);
-void checkCollisionAvoidance(AdvancedCar *car);
+// Инициализация полос перекрестка
+void init_crossroad_lanes(int lanes_per_direction)
+{
+    // Освобождаем старые полосы, если они есть
+    free_crossroad_lanes();
+    
+    crossroad_lane_count = lanes_per_direction * 2;
+    
+    // Инициализируем все указатели в NULL
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int i = 0; i < MAX_LANES; i++) {
+                crossroad_lanes[road][dir][i] = NULL;
+            }
+        }
+    }
+}
+
+// Освобождение памяти всех полос перекрестка
+void free_crossroad_lanes(void)
+{
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int i = 0; i < MAX_LANES; i++) {
+                ListCrossroadCar *current = crossroad_lanes[road][dir][i];
+                while (current != NULL) {
+                    ListCrossroadCar *to_free = current;
+                    current = current->next;
+                    free(to_free);
+                }
+                crossroad_lanes[road][dir][i] = NULL;
+            }
+        }
+    }
+}
+
+// Получение индекса полосы в массиве для перекрестка
+int get_crossroad_lane_index(char road_id, char direction, char lane_number)
+{
+    if (road_id == 0) { // Горизонтальная дорога
+        if (direction == 1) { // Вправо
+            return lane_number - 1;
+        } else { // Влево
+            return (crossroad_lane_count / 2) + (lane_number - 1);
+        }
+    } else { // Вертикальная дорога
+        if (direction == 1) { // Вверх
+            return lane_number - 1;
+        } else { // Вниз
+            return (crossroad_lane_count / 2) + (lane_number - 1);
+        }
+    }
+}
+
+// Получение указателя на список полосы перекрестка
+ListCrossroadCar* get_crossroad_lane(char road_id, char direction, char lane_number)
+{
+    int index = get_crossroad_lane_index(road_id, direction, lane_number);
+    if (index >= 0 && index < crossroad_lane_count) {
+        return crossroad_lanes[road_id][direction == 1 ? 0 : 1][index];
+    }
+    return NULL;
+}
+
+// Создание узла списка для машины перекрестка
+ListCrossroadCar* createCrossroadCarNode(AdvancedCar2 car)
+{
+    ListCrossroadCar *new = (ListCrossroadCar *)malloc(sizeof(ListCrossroadCar));
+    if (!new)
+    {
+        printf("Failed to allocate memory for crossroad car");
+        exit(0);
+    }
+
+    new->car = car;
+    new->next = NULL;
+    return new;
+}
+
+// Вставка машины в список полосы перекрестка
+void insert_crossroad_car(ListCrossroadCar **head, AdvancedCar2 car)
+{
+    ListCrossroadCar *new = createCrossroadCarNode(car);
+    if (!new)
+        return;
+
+    if (*head == NULL)
+    {
+        *head = new;
+    }
+    else
+    {
+        ListCrossroadCar *current = *head;
+        while (current->next != NULL)
+        {
+            current = current->next;
+        }
+        current->next = new;
+    }
+}
+
+// Обновление всех машин на перекрестке
+void update_all_crossroad_cars(void)
+{
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int i = 0; i < crossroad_lane_count; i++) {
+                if (crossroad_lanes[road][dir][i] != NULL) {
+                    // Здесь будет логика обновления машин на перекрестке
+                    // Нужно адаптировать существующую функцию updateCars()
+                }
+            }
+        }
+    }
+}
+
+// Отрисовка всех машин на перекрестке
+void draw_all_crossroad_cars(void)
+{
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int i = 0; i < crossroad_lane_count; i++) {
+                ListCrossroadCar *current = crossroad_lanes[road][dir][i];
+                while (current != NULL) {
+                    drawCrossroadCar(current->car);
+                    current = current->next;
+                }
+            }
+        }
+    }
+}
+
+// Подсчет машин в полосе перекрестка
+int count_crossroad_cars(ListCrossroadCar *head)
+{
+    int count = 0;
+    ListCrossroadCar *current = head;
+    while (current != NULL)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
+//-----------------------------------------------------------------
+// Реализация массива полос
+ListCar *lanes[MAX_LANES] = {NULL};
+int lane_count = 6;  // По умолчанию 3 полосы в каждую сторону
+
+// Инициализация полос
+void init_lanes(int lanes_per_direction)
+{
+    // Освобождаем старые полосы, если они есть
+    free_all_lanes();
+    
+    lane_count = lanes_per_direction * 2;
+    
+    // Инициализируем все указатели в NULL
+    for (int i = 0; i < MAX_LANES; i++) {
+        lanes[i] = NULL;
+    }
+}
+
+// Освобождение памяти всех полос
+void free_all_lanes(void)
+{
+    for (int i = 0; i < MAX_LANES; i++) {
+        ListCar *current = lanes[i];
+        while (current != NULL) {
+            ListCar *to_free = current;
+            current = current->next;
+            free(to_free);
+        }
+        lanes[i] = NULL;
+    }
+}
+
+// Получение индекса полосы в массиве
+int get_lane_index(CarDirection direction, char lane_number)
+{
+    if (direction == RIGHT) {
+        return lane_number - 1;  // Правые полосы: 0, 1, 2...
+    } else {
+        return (lane_count / 2) + (lane_number - 1);  // Левые полосы
+    }
+}
+
+// Получение указателя на список полосы
+ListCar* get_lane(CarDirection direction, char lane_number)
+{
+    int index = get_lane_index(direction, lane_number);
+    if (index >= 0 && index < lane_count) {
+        return lanes[index];
+    }
+    return NULL;
+}
+
+// Применение функции ко всем полосам
+void for_each_lane(void (*func)(ListCar*))
+{
+    for (int i = 0; i < lane_count; i++) {
+        if (lanes[i] != NULL) {
+            func(lanes[i]);
+        }
+    }
+}
+
+// Обновление всех машин
+void update_all_cars(void)
+{
+    for (int i = 0; i < lane_count; i++) {
+        if (lanes[i] != NULL) {
+            updateAdvancedCars(lanes[i]);
+        }
+    }
+}
+
+// Отрисовка всех машин
+void draw_all_cars(void)
+{
+    for (int i = 0; i < lane_count; i++) {
+        ListCar *current = lanes[i];
+        while (current != NULL) {
+            drawHighwayCar(current->car);
+            current = current->next;
+        }
+    }
+}
+//-------------------------------------------------------
+
+int count_cars(ListCar *head)
+{
+    int count = 0;
+    ListCar *current = head;
+    while (current != NULL)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -30,6 +274,8 @@ int main(int argc, char **argv)
 
     return EXIT_SUCCESS;
 }
+
+
 
 /*МЕНЮ И КНОПКИ*/
 
@@ -92,26 +338,31 @@ void processMouseClick(int button, int state, int x, int y)
                     {
                         lines_count = 1;
                         intersection_size = 1.0f;
+                        init_lanes(1);  // Инициализируем полосы
                     }
                     else if (glX >= 0.3f && glX <= 0.4f)
                     {
                         lines_count = 2;
                         intersection_size = 2.0f;
+                        init_lanes(2);  
                     }
                     else if (glX >= 0.45f && glX <= 0.55f)
                     {
                         lines_count = 3;
                         intersection_size = 3.0f;
+                        init_lanes(3);  
                     }
                     else if (glX >= 0.6f && glX <= 0.7f)
                     {
                         lines_count = 4;
                         intersection_size = 4.0f;
+                        init_lanes(4);  
                     }
                     else if (glX >= 0.75f && glX <= 0.85f)
                     {
                         lines_count = 5;
                         intersection_size = 5.0f;
+                        init_lanes(5);  
                     }
                 }
                 // кнопка загрузки из файла
@@ -243,7 +494,7 @@ void menuWindow()
     }
     else if (menu_option == LOAD_FROM_FILE)
     {
-        loadFromFile();
+        //loadFromFile();
     }
 
     glutSwapBuffers();
@@ -431,38 +682,44 @@ void processNormalKeys(unsigned char key, int x, int y)
     // сохранение при моделировании
     else if ((key == 'S' || key == 's') && in_simulation)
     {
-        printf("saving mode\n");
-        track = !track;
-        printf("write <filename>.txt to save:\n");
-        char file[100];
-        if (!fgets(file, 100, stdin))
-        {
-            printf("ERROR\n");
-        }
-        else
-        {
-            file[strcspn(file, "\n")] = '\0';
-            saveSimulation(file);
-        }
+        printf("dont work now");
+
+        // printf("saving mode\n");
+        // track = !track;
+        // printf("write <filename>.txt to save:\n");
+        // char file[100];
+        // if (!fgets(file, 100, stdin))
+        // {
+        //     printf("ERROR\n");
+        // }
+        // else
+        // {
+        //     file[strcspn(file, "\n")] = '\0';
+        //     saveSimulation(file);
+        // }
     }
     // загрузка прошлого моделирования
     else if ((key == 'L' || key == 'l') && !in_simulation && menu_option == LOAD_FROM_FILE)
     {
-        printf("write <filename>.txt to load it:\n");
-        char file[100];
-        if (!fgets(file, 100, stdin))
-        {
-            printf("ERROR\n");
-        }
-        else
-        {
-            file[strcspn(file, "\n")] = '\0';
-            loadSimulation(file);
-        }
+        printf("dont work now");
+
+        // printf("write <filename>.txt to load it:\n");
+        // char file[100];
+        // if (!fgets(file, 100, stdin))
+        // {
+        //     printf("ERROR\n");
+        // }
+        // else
+        // {
+        //     file[strcspn(file, "\n")] = '\0';
+        //     loadSimulation(file);
+        // }
     }
     // обеспечение дтп на полосе
     else if ((key == 'A' || key == 'a') && in_simulation && type_simulation == HIGHWAY)
     {
+//???????????????????????????????????????????????????????
+
         accident_flag = !accident_flag;
         displayAccident();
     }
@@ -568,6 +825,9 @@ void init()
 // инициализация машин на перекрестке
 void initCrossroadCar()
 {
+    // Инициализируем полосы
+    init_crossroad_lanes(lines_count);
+
     for (int i = 0; i < MAX_CARS; i++)
     {
         addCrossroadCar();
@@ -577,13 +837,91 @@ void initCrossroadCar()
 // инициализация машин на автостраде
 void initHighwayCar()
 {
-    for (int i = 0; i < MAX_CARS; i++)
+    // Инициализируем полосы
+    init_lanes(lines_count);
+
+    for (int i = 0; i < 4; i++)
     {
         addRandomCar();
     }
 }
 
 /* ПРЯМАЯ ДОРОГА */
+
+int count_cars(ListCar *head)
+{
+    int count = 0;
+    ListCar *current = head;
+    while (current != NULL)
+    {
+        count++;
+        current = current->next;
+    }
+    return count;
+}
+
+CarNode create_highway_car(CarDirection direction, char lane)
+{
+    CarNode car = {0}; // memset 0
+
+    car.direction = direction;
+    car.lane = lane;
+
+    car.is_braking = false;
+    car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
+    car.speed = car.max_speed * 0.5;
+
+    car.color[0] = (50 + rand() % 50) / 100.0f; // R: 0.5-1.0 (исключает 0.0)
+    car.color[1] = (rand() % 100) / 100.0f;     // G: 0.0-1.0
+    car.color[2] = (rand() % 100) / 100.0f;     // B: 0.0-1.0
+
+    if (car.direction == RIGHT)
+    {
+        car.position = -WINDOW_BORDER - 1 - (rand() % 10);
+    }
+    else
+    {
+        car.position = WINDOW_BORDER + 1 + (rand() % 10);
+        // car.lane = -car.lane;
+    }
+
+    return car;
+}
+
+ListCar *createCarNode(CarNode car)
+{
+    ListCar *new = (ListCar *)malloc(sizeof(ListCar));
+    if (!new)
+    {
+        printf("Failed to allocate memory");
+        exit(0);
+    }
+
+    new->car = car;
+    new->next = NULL;
+    return new;
+}
+
+void insert_car(ListCar **head, CarNode car)
+{
+    ListCar *new = createCarNode(car);
+    if (!new)
+        return;
+
+    if (*head == NULL)
+    {
+        *head = new;
+    }
+    else
+    {
+        ListCar *current = *head;
+        while (current->next != NULL)
+        {
+            current = current->next;
+        }
+        current->next = new;
+    }
+}
 
 // отрисовка прямой дороги
 void drawHighway()
@@ -632,93 +970,90 @@ void drawHighway()
 
     glColor3f(0.0, 0.0, 0.0);
 
-    // полосы вправо
-    for (int lane = 1; lane <= lines_count; lane++)
-    {
-        char lane_num[3];
-        sprintf(lane_num, "%d", lane);
+    // // полосы вправо
+    // for (int lane = 1; lane <= lines_count; lane++)
+    // {
+    //     char lane_num[3];
+    //     sprintf(lane_num, "%d", lane);
 
-        glRasterPos2f(WINDOW_BORDER - 1.5, (lane)*LINE_WIDTH - 0.1);
-        for (char *c = lane_num; *c != '\0'; c++)
-        {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
-        }
-    }
+    //     glRasterPos2f(WINDOW_BORDER - 1.5, (lane)*LINE_WIDTH - 0.1);
+    //     for (char *c = lane_num; *c != '\0'; c++)
+    //     {
+    //         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
+    //     }
+    // }
 
-    // полосы влево
-    for (int lane = 1; lane <= lines_count; lane++)
-    {
-        char lane_num[3];
-        sprintf(lane_num, "-%d", lane);
+    // // полосы влево
+    // for (int lane = 1; lane <= lines_count; lane++)
+    // {
+    //     char lane_num[3];
+    //     sprintf(lane_num, "-%d", lane);
 
-        glRasterPos2f(-WINDOW_BORDER + 0.5, (-lane) * LINE_WIDTH - 0.1);
-        for (char *c = lane_num; *c != '\0'; c++)
-        {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
-        }
-    }
+    //     glRasterPos2f(-WINDOW_BORDER + 0.5, (-lane) * LINE_WIDTH - 0.1);
+    //     for (char *c = lane_num; *c != '\0'; c++)
+    //     {
+    //         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
+    //     }
+    // }
 
-    // при флаге дтп
-    if (accident_flag)
-    {
-        const char str[4][100] = {"ACCIDENT MODE", "choose lane and wait", "cars will be red, if them in accident"};
+    // // при флаге дтп
+    // if (accident_flag)
+    // {
+    //     const char str[4][100] = {"ACCIDENT MODE", "choose lane and wait", "cars will be red, if them in accident"};
 
-        glColor3f(1.0f, 1.0f, 1.0f);
-        float y_pos = -12.0f;
-        for (int i = 0; i < 4; i++)
-        {
-            glRasterPos2f(10.0f, y_pos);
-            for (int j = 0; j < strlen(str[i]); j++)
-            {
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
-            }
-            y_pos -= 1.0f;
-        }
-        // кнопки выбора полосы
+    //     glColor3f(1.0f, 1.0f, 1.0f);
+    //     float y_pos = -12.0f;
+    //     for (int i = 0; i < 4; i++)
+    //     {
+    //         glRasterPos2f(10.0f, y_pos);
+    //         for (int j = 0; j < strlen(str[i]); j++)
+    //         {
+    //             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
+    //         }
+    //         y_pos -= 1.0f;
+    //     }
+    //     // кнопки выбора полосы
 
-        for (int i = -lines_count; i <= lines_count; i++)
-        {
-            if (i == 0)
-                continue;
+    //     for (int i = -lines_count; i <= lines_count; i++)
+    //     {
+    //         if (i == 0)
+    //             continue;
 
-            char label[10];
-            sprintf(label, "%d", i);
-            bool active = (accident_lane == i);
-            drawButtonNumber(WINDOW_BORDER / 2 + (i - 1) * 1.2f, -WINDOW_BORDER + 2, 1.0f, 1.5f, label, active);
-        }
-    }
+    //         char label[10];
+    //         sprintf(label, "%d", i);
+    //         bool active = (accident_lane == i);
+    //         drawButtonNumber(WINDOW_BORDER / 2 + (i - 1) * 1.2f, -WINDOW_BORDER + 2, 1.0f, 1.5f, label, active);
+    //     }
+    // }
 }
 
-// отрисовка машины на автостраде
-void drawHighwayCar(AdvancedCar car)
+void drawHighwayCar(CarNode car)
 {
     // изменения только в рамках одной машины
     glPushMatrix();
 
     // позиция машины на полосе
-    float lane_pos = car.lane * LINE_WIDTH;
-    if (car.is_changing_lane)
+    // float lane_pos = car.lane * LINE_WIDTH;
+
+    float lane_pos;
+    if (car.direction == RIGHT)
     {
-        lane_pos = (car.lane * (1 - car.lane_change_progress) + car.target_lane * car.lane_change_progress) * LINE_WIDTH;
+        // Для движения направо - полосы сверху вниз: 1, 2, 3...
+        lane_pos = (lines_count - car.lane + 1.0) * LINE_WIDTH;
+    }
+    else
+    {
+        // Для движения налево - полосы снизу вверх: -1, -2, -3...
+        lane_pos = (-lines_count + car.lane - 1.0) * LINE_WIDTH;
     }
 
     // установка положения машины
     glTranslatef(car.position, lane_pos, 0);
 
     // поворот рисовки, если движение влево
-    if (car.direction == -1)
+    if (car.direction == LEFT)
     {
         glRotatef(180, 0, 1, 0);
-    }
-
-    // при перестроении линия
-    if (car.is_changing_lane)
-    {
-        glColor3f(1.0, 0.5, 0.0);
-        glBegin(GL_LINES);
-        glVertex2f(0, 0);
-        glVertex2f(0, (car.target_lane - car.lane) * LINE_WIDTH);
-        glEnd();
     }
 
     // свет при торможении
@@ -788,13 +1123,54 @@ void displayHighway()
 
     // отрисовка машин
     glColor3f(0.25f, 0.25f, 1.0f);
-    for (int i = 0; i < car_count; i++)
-    {
-        drawHighwayCar(advanced_cars[i]);
-    }
 
-    // вывод статистики
-    infoStatistic(false);
+    // Используем новую универсальную функцию
+    draw_all_cars();
+
+
+    // // struct ListCar *current = highway_car;
+    // struct ListCar *current1 = lane_1;
+    // while (current1 != NULL)
+    // {
+    //     drawHighwayCar(current1->car);
+    //     current1 = current1->next;
+    // }
+
+    // struct ListCar *current2 = lane_2;
+    // while (current2 != NULL)
+    // {
+    //     drawHighwayCar(current2->car);
+    //     current2 = current2->next;
+    // }
+
+    // struct ListCar *current3 = lane_3;
+    // while (current3 != NULL)
+    // {
+    //     drawHighwayCar(current3->car);
+    //     current3 = current3->next;
+    // }
+
+    // struct ListCar *current4 = lane_m1;
+    // while (current4 != NULL)
+    // {
+    //     drawHighwayCar(current4->car);
+    //     current4 = current4->next;
+    // }
+
+    // struct ListCar *current5 = lane_m2;
+    // while (current5 != NULL)
+    // {
+    //     drawHighwayCar(current5->car);
+    //     current5 = current5->next;
+    // }
+
+    // struct ListCar *current6 = lane_m3;
+    // while (current6 != NULL)
+    // {
+    //     drawHighwayCar(current6->car);
+    //     current6 = current6->next;
+    // }
+
     glutSwapBuffers();
 }
 
@@ -805,7 +1181,14 @@ void updateHighway(int value)
     if (track)
     {
         addRandomCar();
-        updateAdvancedCars();
+        // updateAdvancedCars(lane_1);
+        // updateAdvancedCars(lane_2);
+        // updateAdvancedCars(lane_3);
+        // updateAdvancedCars(lane_m1);
+        // updateAdvancedCars(lane_m2);
+        // updateAdvancedCars(lane_m3);
+
+        update_all_cars();
     }
 
     glutPostRedisplay();
@@ -813,402 +1196,160 @@ void updateHighway(int value)
 }
 
 // подсчет оптимальной скорости в торможении
-float calculateSafeSpeed(AdvancedCar *car, float distance)
+float calculateSafeSpeed(CarNode car, float distance)
 {
     // на основе дистанции мд машинами
-    float safe_speed = car->max_speed * (distance / (SAFE_DISTANCE * 2));
-    return fmax(MIN_SPEED, fmin(car->max_speed, safe_speed));
-}
-
-// проверка для смены полосы
-bool isSafeToChangeLane(AdvancedCar *car, char new_lane, float *safe_speed)
-{
-    *safe_speed = car->max_speed;
-    bool is_safe = true;
-
-    for (int i = 0; i < car_count; i++)
-    {
-        if (&advanced_cars[i] == car)
-            continue;
-
-        // проверяем только машины в том же направлении
-        if (advanced_cars[i].direction != car->direction)
-            continue;
-
-        // Определяем полосу проверяемой машины (с учетом перестроения)
-        char other_lane = advanced_cars[i].is_changing_lane ? (char)(advanced_cars[i].lane * (1 - advanced_cars[i].lane_change_progress) + advanced_cars[i].target_lane * advanced_cars[i].lane_change_progress) : advanced_cars[i].lane;
-
-        // если машина на желаемой полосе
-        if (abs(other_lane - new_lane) < 1.5)
-        {
-            float dist = fabs(advanced_cars[i].position - car->position);
-
-            // относительное положение
-            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
-                               (car->direction == -1 && advanced_cars[i].position < car->position);
-
-            if (is_in_front && dist < SAFE_DISTANCE * 3)
-            {
-                // подсчет безопасной скорости для этой машины
-                float this_safe_speed = calculateSafeSpeed(car, dist);
-                if (this_safe_speed < *safe_speed)
-                {
-                    *safe_speed = this_safe_speed;
-                }
-
-                if (dist < SAFE_DISTANCE * 1.5)
-                {
-                    is_safe = false;
-                }
-            }
-        }
-    }
-
-    return is_safe;
+    float safe_speed = car.max_speed * (distance / (SAFE_DISTANCE * 2));
+    return fmax(MIN_SPEED, fmin(car.max_speed, safe_speed));
 }
 
 // проверка для предотвращения дтп
-void checkCollisionAvoidance(AdvancedCar *car)
+void checkCollisionAvoidance(ListCar *current)
 {
-    // Если машина уже в аварии, фиксируем её положение
-    if (car->state == CAR_STATE_ACCIDENT)
-    {
-        car->speed = 0.0;
-        car->is_braking = true;
-        car->is_changing_lane = false; // Запрещаем перестроение
-        car->target_lane = car->lane;  // Фиксируем текущую полосу
-        car->lane_change_progress = 0.0;
-        car->color[0] = 1.0; // Красный цвет
-        car->color[1] = 0.0;
-        car->color[2] = 0.0;
-        return;
-    }
-
-    static bool accident_created = false;
-    static AdvancedCar *accident_car1 = NULL;
-    static AdvancedCar *accident_car2 = NULL;
-
-    // Создание аварии при активации флага
-    if (accident_flag && !accident_created && car->lane == accident_lane)
-    {
-        for (int i = 0; i < car_count; i++)
-        {
-            if (&advanced_cars[i] != car &&
-                advanced_cars[i].lane == accident_lane &&
-                advanced_cars[i].direction == car->direction &&
-                fabs(advanced_cars[i].position - car->position) < SAFE_DISTANCE * 2)
-            {
-
-                // Фиксируем положение машин в аварии
-                accident_car1 = car;
-                accident_car2 = &advanced_cars[i];
-                accident_car1->fixed_position = accident_car1->position;
-                accident_car2->fixed_position = accident_car2->position;
-                accident_created = true;
-                break;
-            }
-        }
-    }
-
-    // Обработка машин в аварии
-    if (accident_created && (car == accident_car1 || car == accident_car2))
-    {
-        car->state = CAR_STATE_ACCIDENT;
-        car->speed = 0.0;
-        car->is_braking = true;
-        car->is_changing_lane = false;
-        car->position = car->fixed_position; // Фиксированная позиция
-        car->color[0] = 1.0;
-        car->color[1] = 0.0;
-        car->color[2] = 0.0;
-        return;
-    }
-
     // минимальная допустимая дистанция
     float min_distance = SAFE_DISTANCE * 3;
-    car->is_braking = false;
+    current->car.is_braking = false;
 
-    for (int i = 0; i < car_count; i++)
+    ListCar *next_car = current->next;
+    if (next_car == NULL)
+        return;
+
+    float path_distance = fabs(next_car->car.position - current->car.position);
+    // Определяем относительное положение
+    bool is_in_front = (current->car.direction == RIGHT && next_car->car.position > current->car.position) ||
+                       (current->car.direction == LEFT && next_car->car.position < current->car.position);
+
+    if (is_in_front && path_distance < min_distance)
     {
-        // текущую машину не проверяем
-        if (&advanced_cars[i] == car)
-            continue;
+        min_distance = path_distance;
 
-        // Рассчитываем позиции с учетом перестроения
-        float car_lane = car->lane;
-        if (car->is_changing_lane)
+        // Если машина впереди ближе безопасной дистанции
+        if (path_distance < SAFE_DISTANCE * 1.5)
         {
-            car_lane = car->lane * (1 - car->lane_change_progress) + car->target_lane * car->lane_change_progress;
-        }
+            current->car.is_braking = true;
+            float safe_speed = calculateSafeSpeed(current->car, path_distance);
 
-        float other_lane = advanced_cars[i].lane;
-        if (advanced_cars[i].is_changing_lane)
-        {
-            other_lane = advanced_cars[i].lane * (1 - advanced_cars[i].lane_change_progress) + advanced_cars[i].target_lane * advanced_cars[i].lane_change_progress;
-        }
-
-        // Проверяем только машины в том же направлении
-        if (advanced_cars[i].direction != car->direction)
-            continue;
-
-        // Проверяем расстояние по полосе
-        float lane_distance = fabs(car_lane - other_lane) * LINE_WIDTH;
-        if (lane_distance < 0.8)
-        {
-            // Если машины на одной или соседних полосах
-            float path_distance = fabs(advanced_cars[i].position - car->position);
-
-            // Определяем относительное положение
-            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
-                               (car->direction == -1 && advanced_cars[i].position < car->position);
-
-            if (is_in_front && path_distance < min_distance)
+            // Плавное торможение до безопасной скорости
+            if (current->car.speed > safe_speed)
             {
-                min_distance = path_distance;
+                current->car.speed = fmax(safe_speed, current->car.speed * BRAKING_FACTOR);
+            }
 
-                // Если машина впереди ближе безопасной дистанции
-                if (path_distance < SAFE_DISTANCE * 1.5)
-                {
-                    car->is_braking = true;
-                    float safe_speed = calculateSafeSpeed(car, path_distance);
-
-                    // Плавное торможение до безопасной скорости
-                    if (car->speed > safe_speed)
-                    {
-                        car->speed = fmax(safe_speed, car->speed * BRAKING_FACTOR);
-                    }
-
-                    // Если очень близко - экстренное торможение
-                    if (path_distance < SAFE_DISTANCE * 0.7)
-                    {
-                        car->speed *= 0.8;
-                    }
-                }
+            // Если очень близко - экстренное торможение
+            if (path_distance < SAFE_DISTANCE * 0.7)
+            {
+                current->car.speed *= 0.8;
             }
         }
     }
 
     // Плавное ускорение, если нет препятствий
-    if (!car->is_braking && car->speed < car->max_speed)
+    if (!current->car.is_braking && current->car.speed < current->car.max_speed)
     {
-        car->speed += ACCELERATION;
-        car->speed = fmin(car->speed, car->max_speed);
+        current->car.speed += ACCELERATION;
+        current->car.speed = fmin(current->car.speed, current->car.max_speed);
     }
 }
 
-// решение о смене полосы
-void decideLaneChange(AdvancedCar *car)
-{
-    // Если машина уже перестраивается - завершаем
-    if (car->is_changing_lane)
-        return;
-
-    bool slow_car_ahead = false;
-    float min_distance = SAFE_DISTANCE * 3;
-
-    // Проверяем все машины на дороге
-    for (int i = 0; i < car_count; i++)
-    {
-        // Пропускаем текущую машину
-        if (&advanced_cars[i] == car)
-            continue;
-
-        // Проверяем только машины на той же полосе и в том же направлении
-        if (advanced_cars[i].lane == car->lane &&
-            advanced_cars[i].direction == car->direction)
-        {
-            // Вычисляем дистанцию между машинами
-            float dist = fabs(advanced_cars[i].position - car->position);
-
-            // Определяем, находится ли машина впереди
-            bool is_in_front = (car->direction == 1 && advanced_cars[i].position > car->position) ||
-                               (car->direction == -1 && advanced_cars[i].position < car->position);
-
-            // Если машина впереди и ближе минимальной дистанции
-            if (is_in_front && dist < min_distance)
-            {
-                min_distance = dist;
-
-                // Проверяем условия для "медленной машины":
-                if (dist < SAFE_DISTANCE * 2 &&
-                    advanced_cars[i].speed < car->max_speed * 0.8)
-                {
-                    slow_car_ahead = true;
-                }
-            }
-        }
-    }
-
-    // Если нет медленных машин впереди - завершаем
-    if (!slow_car_ahead)
-        return;
-
-    // Проверяем обе соседние полосы
-    for (int dl = -1; dl <= 1; dl += 2)
-    {
-        // Вычисляем номер новой полосы
-        int new_lane = car->lane + dl;
-
-        // Проверки корректности полосы
-        if (new_lane * car->direction <= 0 ||
-            abs(new_lane) > lines_count)
-            continue;
-
-        // Проверяем безопасность перестроения
-        float safe_speed;
-        if (isSafeToChangeLane(car, new_lane, &safe_speed))
-        {
-            // Если перестроение безопасно, инициализируем его
-            car->target_lane = new_lane;
-            car->is_changing_lane = true;
-            car->lane_change_progress = 0.0;
-            car->target_speed = safe_speed;
-            return;
-        }
-    }
-
-    // Если не найдено безопасных полос для перестроения - остаемся на текущей полосе
-}
 
 // обновляем рисовку машинок на автостраде
-void updateAdvancedCars()
+void updateAdvancedCars(ListCar *head)
 {
     if (!track)
         return;
 
-    for (int i = 0; i < car_count; i++)
+    struct ListCar *current = head;
+    while (current != NULL)
     {
+        // ТУТ ОБРАБОТКА ТОРМОЖЕНИЙ И ПЕРЕСТРОЕНИЙ - ФУНКЦИИ СООТВ
+        checkCollisionAvoidance(current);
 
-        // Проверяем и предотвращаем столкновения
-        checkCollisionAvoidance(&advanced_cars[i]);
-
-        // Решение о перестроении
-        if (!advanced_cars[i].is_changing_lane && rand() % 100 < 10)
-        {
-            decideLaneChange(&advanced_cars[i]);
-        }
-
-        // Обработка перестроения
-        if (advanced_cars[i].is_changing_lane)
-        {
-            // Торможение перед перестроением
-            if (advanced_cars[i].speed > advanced_cars[i].target_speed)
-            {
-                advanced_cars[i].speed = fmax(advanced_cars[i].target_speed, advanced_cars[i].speed * BRAKING_FACTOR);
-                advanced_cars[i].is_braking = true;
-            }
-
-            // Начинаем перестроение только когда достигли безопасной скорости
-            if (advanced_cars[i].speed <= advanced_cars[i].target_speed * 1.1)
-            {
-                advanced_cars[i].lane_change_progress += LANE_CHANGE_SPEED;
-
-                // если завершили перестроение
-                if (advanced_cars[i].lane_change_progress >= 1.0)
-                {
-                    advanced_cars[i].lane = advanced_cars[i].target_lane;
-                    advanced_cars[i].is_changing_lane = false;
-                    advanced_cars[i].target_lane = -1;
-                }
-            }
-        }
-
-        // изменение координат
-        advanced_cars[i].position += advanced_cars[i].speed * advanced_cars[i].direction;
-
+        current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
         // Если машина выехала за пределы дороги
-        if ((advanced_cars[i].direction == 1 && advanced_cars[i].position > WINDOW_BORDER) ||
-            (advanced_cars[i].direction == -1 && advanced_cars[i].position < -WINDOW_BORDER))
+        if ((current->car.direction == RIGHT && current->car.position > WINDOW_BORDER) ||
+            (current->car.direction == LEFT && current->car.position < -WINDOW_BORDER))
         {
-            if (advanced_cars[i].direction == 1)
+            if (current->car.direction == RIGHT)
             {
-                advanced_cars[i].position = -WINDOW_BORDER - 1;
+                current->car.position = -WINDOW_BORDER - 1;
             }
             else
             {
-                advanced_cars[i].position = WINDOW_BORDER + 1;
+                current->car.position = WINDOW_BORDER + 1;
             }
 
-            advanced_cars[i].speed = advanced_cars[i].max_speed * 0.7; // Начинаем с меньшей скорости
-            advanced_cars[i].is_changing_lane = false;
-            advanced_cars[i].target_lane = -1;
-            advanced_cars[i].is_braking = false;
+            current->car.speed = current->car.max_speed * 0.7;
         }
+
+        current = current->next;
     }
 }
 
 // добавление новой машинки на автостраду
 void addRandomCar()
 {
-    // добавляем не больше допустимого числа
-    if (car_count >= MAX_CARS)
-        return;
-
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    // Реже добавляем машины
-    if (current_time - last_add_time < 0.8)
+    // Проверяем временной интервал
+    if (current_time - last_add_time < 2.0)
         return;
 
     last_add_time = current_time;
 
-    char direction = (rand() % 2) ? 1 : -1;
-    char lane = (rand() % lines_count) + 1;
-    if (direction == -1)
-        lane = -lane;
+    // // Добавляем машины на все доступные полосы
+    // if (count_cars(lane_1) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(RIGHT, 1);
+    //     insert_car(&lane_1, new_car);
+    // }
 
-    // Проверяем, можно ли добавить машину
-    bool can_add = true;
-    for (int i = 0; i < car_count; i++)
-    {
-        if (advanced_cars[i].lane == lane && advanced_cars[i].direction == direction)
-        {
-            float pos_diff = (direction == 1) ? (advanced_cars[i].position - (-WINDOW_BORDER))
-                                              : (WINDOW_BORDER - advanced_cars[i].position);
-            if (pos_diff < SAFE_DISTANCE * 3)
-            {
-                // Большая дистанция при добавлении
-                can_add = false;
-                break;
-            }
+    // if (count_cars(lane_2) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(RIGHT, 2);
+    //     insert_car(&lane_2, new_car);
+    // }
+
+    // if (count_cars(lane_3) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(RIGHT, 3);
+    //     insert_car(&lane_3, new_car);
+    // }
+
+    // if (count_cars(lane_m1) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(LEFT, 1);
+    //     insert_car(&lane_m1, new_car);
+    // }
+
+    // if (count_cars(lane_m2) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(LEFT, 2);
+    //     insert_car(&lane_m2, new_car);
+    // }
+
+    // if (count_cars(lane_m3) < MAX_LANE_CAR)
+    // {
+    //     CarNode new_car = create_highway_car(LEFT, 3);
+    //     insert_car(&lane_m3, new_car);
+    // }
+
+        // Добавляем машины на все доступные полосы
+    for (int lane_num = 1; lane_num <= lane_count / 2; lane_num++) {
+        // Правые полосы
+        int right_index = get_lane_index(RIGHT, lane_num);
+        if (count_cars(lanes[right_index]) < MAX_LANE_CAR) {
+            CarNode new_car = create_highway_car(RIGHT, lane_num);
+            insert_car(&lanes[right_index], new_car);
+        }
+        
+        // Левые полосы  
+        int left_index = get_lane_index(LEFT, lane_num);
+        if (count_cars(lanes[left_index]) < MAX_LANE_CAR) {
+            CarNode new_car = create_highway_car(LEFT, lane_num);
+            insert_car(&lanes[left_index], new_car);
         }
     }
-
-    // не можем добавить машину
-    if (!can_add)
-        return;
-
-    // инициализируем машину
-    AdvancedCar new_car;
-    new_car.direction = direction;
-    new_car.lane = lane;
-    new_car.target_lane = -1;
-    new_car.lane_change_progress = 0.0;
-    new_car.is_changing_lane = false;
-    new_car.is_braking = false;
-    new_car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
-    new_car.speed = new_car.max_speed * 0.6; // Начинаем с еще меньшей скорости
-    do
-    {
-        new_car.color[0] = (50 + rand() % 50) / 100.0f; // R: 0.5-1.0 (исключает 0.0)
-        new_car.color[1] = (rand() % 100) / 100.0f;     // G: 0.0-1.0
-        new_car.color[2] = (rand() % 100) / 100.0f;     // B: 0.0-1.0
-
-        // Проверяем, что цвет не черный (0,0,0) и не красный (1,0,0)
-    } while ((new_car.color[0] == 1.0f && new_car.color[1] == 0.0f && new_car.color[2] == 0.0f) ||
-             (new_car.color[0] == 0.0f && new_car.color[1] == 0.0f && new_car.color[2] == 0.0f));
-
-    if (direction == 1)
-    {
-        new_car.position = -WINDOW_BORDER - 1;
-    }
-    else
-    {
-        new_car.position = WINDOW_BORDER + 1;
-    }
-
-    advanced_cars[car_count++] = new_car;
 }
 
 /* ПЕРЕКРЕСТОК */
@@ -1266,7 +1407,9 @@ bool isCollisionImminent(AdvancedCar2 *car1, AdvancedCar2 *car2)
 // выбираем случайную полосу
 char getRandomLane(char road_id, char direction)
 {
-    char lane = (rand() % lines_count) + 1;
+    char lane = 0;
+    //while (lane != 1 && lane != -1)
+        lane = (rand() % lines_count) + 1;
 
     // Горизонтальная дорога
     if (road_id == 0)
@@ -1468,25 +1611,18 @@ void drawCrossroadCar(AdvancedCar2 car)
     // Позиция машины
     glTranslatef(car.x, car.y, 0);
 
-    // Поворот в зависимости от направления
-    float angle = 0;
-    if (car.direction_x == -1)
-        angle = 180;
-    else if (car.direction_y == 1)
-        angle = 90;
-    else if (car.direction_y == -1)
-        angle = 270;
 
-    // Дополнительный поворот при выполнении маневра
-    if (car.is_turning)
-    {
-        if (car.turn_direction == TURN_LEFT)
-            angle -= car.turn_progress * 90;
-        else
-            angle += car.turn_progress * 90;
+    float display_angle;
+    if (car.is_turning) {
+        display_angle = car.current_display_angle; // Используем угол, рассчитанный в executeTurn
+    } else {
+        // Стандартные углы для прямолинейного движения
+        if (car.direction_x == -1) display_angle = 180;
+        else if (car.direction_y == 1) display_angle = 90;
+        else if (car.direction_y == -1) display_angle = 270;
+        else display_angle = 0; // По умолчанию для direction_x = 1
     }
-
-    glRotatef(angle, 0, 0, 1);
+    glRotatef(display_angle, 0, 0, 1);
 
     // Индикатор перестроения
     if (car.is_changing_lane)
@@ -1581,26 +1717,22 @@ void decideTurn(AdvancedCar2 *car)
     if (car->will_turn || car->is_turning)
         return;
 
-    // Определяем приближение к перекрестку
-    bool approaching = false;
-    // Горизонтальная дорога
-    if (car->road_id == 0)
-    {
-        approaching = (car->direction_x == 1 && car->x > intersection_size - 5.0 && car->x < intersection_size) ||
-                      (car->direction_x == -1 && car->x < -intersection_size + 5.0 && car->x > -intersection_size);
-    }
-    // Вертикальная дорога
-    else
-    {
-        approaching = (car->direction_y == 1 && car->y > intersection_size - 5.0 && car->y < intersection_size) ||
-                      (car->direction_y == -1 && car->y < -intersection_size + 5.0 && car->y > -intersection_size);
-    }
-
-    // 25% шанс поворота
-    if (approaching && rand() % 100 < 25)
+    // Если машина едет по крайней левой полосе — поворачивает налево
+    if ((car->lane == 1 && (car->direction_x < 0 || car->direction_y > 0)) ||
+        (car->lane == -1 && (car->direction_x > 0 || car->direction_y < 0)))
     {
         car->will_turn = true;
-        car->planned_turn = (rand() % 2) ? TURN_LEFT : TURN_RIGHT;
+        car->planned_turn = TURN_LEFT;
+    }
+    // Если машина едет по крайней левой полосе — поворачивает налево
+    // Машина поворачивает с 50% шансом
+    else if ((rand() % 2) &&
+            ((car->lane == lines_count && (car->direction_x < 0 || car->direction_y > 0)) ||
+            (car->lane == -lines_count && (car->direction_x > 0 || car->direction_y < 0))))
+    {
+            car->will_turn = true;
+            car->planned_turn = TURN_RIGHT;
+    
     }
 }
 
@@ -1608,24 +1740,15 @@ void decideTurn(AdvancedCar2 *car)
 bool canTurn(AdvancedCar2 *car, TurnDirection turn)
 {
     // Проверяем, находится ли машина на правильной полосе для поворота
-    if (turn == TURN_LEFT && abs(car->lane) != 1)
-        return false;
-
-    if (turn == TURN_RIGHT && car->lane != ((car->road_id == 0) ? ((car->direction_x == 1) ? -1 : 1) : ((car->direction_y == 1) ? 1 : -1)))
-        return false;
+    // НАЛЕВО машина может повернуть только с крайней ЛЕВОЙ полосы
+    if (turn == TURN_LEFT && (abs(car->lane) != 1)) return false;
+    // НАПРАВО машина может повернуть только с крайней ПРАВОЙ полосы
+    if (turn == TURN_RIGHT && (abs(car->lane) != lines_count)) return false;
 
     // Предсказываем новую полосу после поворота
-    int new_lane;
-    // Горизонтальная -> Вертикальная
-    if (car->road_id == 0)
-    {
-        new_lane = (turn == TURN_LEFT) ? ((car->direction_x == 1) ? 1 : -1) : ((car->direction_x == 1) ? -1 : 1);
-    }
-    // Вертикальная -> Горизонтальная
-    else
-    {
-        new_lane = (turn == TURN_LEFT) ? ((car->direction_y == 1) ? -1 : 1) : ((car->direction_y == 1) ? 1 : -1);
-    }
+    int new_lane = 0;
+    if (turn == TURN_LEFT) new_lane = car->lane;
+    else  new_lane = -(car->lane);
 
     // Проверяем машины на целевой дороге и полосе
     for (int i = 0; i < car_count; i++)
@@ -1663,56 +1786,136 @@ bool canTurn(AdvancedCar2 *car, TurnDirection turn)
 // совершение поворота
 void executeTurn(AdvancedCar2 *car)
 {
+    // Если машина еще не поворачивает, проверяем условия для начала поворота
     if (!car->is_turning)
     {
-        // Начинаем поворот только если можно
-        if (fabs(car->x) < intersection_size / 2 && fabs(car->y) < intersection_size / 2)
+        // Условие для начала поворота: центр машины достигает границы перекрестка.
+        // Это упрощение. Более точный старт был бы, когда передняя часть машины достигает точки поворота. (ИСПРАВИТЬ!)
+        bool at_turn_start_point = false;
+        float turn_threshold;
+        if (car->planned_turn == TURN_LEFT) turn_threshold = intersection_size;
+        else turn_threshold = intersection_size + 1.4 - 0.25;
+
+        if (car->road_id == 0) { // Горизонтальная дорога
+            if (car->direction_x == 1 && car->x >= -turn_threshold) at_turn_start_point = true;
+            if (car->direction_x == -1 && car->x <= turn_threshold) at_turn_start_point = true;
+        } else { // Вертикальная дорога
+            if (car->direction_y == 1 && car->y >= -turn_threshold) at_turn_start_point = true;
+            if (car->direction_y == -1 && car->y <= turn_threshold) at_turn_start_point = true;
+        }
+
+        // Если машина планирует повернуть, находится в точке старта и поворот возможен
+        if (car->will_turn && at_turn_start_point && canTurn(car, car->planned_turn))
         {
-            if (canTurn(car, car->planned_turn))
-            {
-                car->is_turning = true;
-                car->turn_progress = 0.0;
-                car->speed *= 0.7;
-            }
-            else
-            {
-                car->will_turn = false;
-            }
+            car->is_turning = true;
+            car->turn_progress = 0.0f;
+            //car->speed *= 0.7f; // Замедление для поворота
+            car->speed = TURN_SPEED;
+            car->turn_direction = car->planned_turn; // Устанавливаем направление поворота
+            // Сохраняем начальные координаты для точного расчета дуги
+            car->turn_start_x = car->x;
+            car->turn_start_y = car->y;
+        }
+        else if (car->will_turn && at_turn_start_point && !canTurn(car, car->planned_turn))
+        {
+            // Если запланированный поворот невозможен, отменяем его
+            car->will_turn = false;
         }
         return;
     }
 
-    // Выполнение поворота
-    car->turn_progress += TURN_SPEED;
-    float progress = car->turn_progress;
-    float angle = progress * M_PI / 2;
 
-    if (car->road_id == 0)
-    {
-        if (car->turn_direction == TURN_LEFT)
-        {
-            car->x = car->direction_x * intersection_size / 2 * cos(angle);
-            car->y = car->direction_x * intersection_size / 2 * sin(angle);
+    // Выполнение поворота
+    car->turn_progress += 0.01;
+    float progress = fmin(1.0f, car->turn_progress); // Ограничиваем прогресс от 0 до 1
+
+    float Cx, Cy, R_arc, start_angle, end_angle;
+    float current_angle;
+
+    float I = intersection_size; // Половина ширины/высоты перекрестка
+    float LW = LINE_WIDTH;       // Ширина полосы (предполагается 1.0f)
+
+    // Определяем параметры поворота в зависимости от направления движения и типа поворота
+    if (car->road_id == 0) { // Горизонтальная дорога (въезд слева или справа)
+        float entry_y = car->turn_start_y; // Начальная Y-координата (центр полосы)
+        if (car->direction_x == 1) { // Движение вправо
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вверх)
+                Cx = -I;
+                Cy = I;
+                R_arc = I - entry_y;
+                start_angle = 3 * M_PI / 2;
+                end_angle = 2 * M_PI ;
+            } else { // Поворот направо (вниз)
+                Cx = -I-1;
+                Cy = -I-1;
+                R_arc = I + entry_y + 1;
+                start_angle = M_PI / 2;
+                end_angle = 0;
+            }
+        } else { // Движение влево 
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вниз)
+                Cx = I;
+                Cy = -I;
+                R_arc = I + entry_y;
+                start_angle = M_PI / 2;
+                end_angle = M_PI;
+            } else { // Поворот направо (вверх)
+                Cx = I + 1;
+                Cy = I + 1;
+                R_arc = I - entry_y -1;
+                start_angle = M_PI / 2;
+                end_angle = 0;
+            }
         }
-        else
-        {
-            car->x = car->direction_x * intersection_size / 2 * cos(angle);
-            car->y = -car->direction_x * intersection_size / 2 * sin(angle);
+    } else { // Вертикальная дорога (въезд снизу или сверху)
+        float entry_x = car->turn_start_x; // Начальная X-координата (центр полосы)
+        if (car->direction_y == 1) { // Движение вверх
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (влево)
+                Cx = -I;
+                Cy = -I;
+                R_arc = I + entry_x;
+                start_angle = 0; 
+                end_angle = M_PI / 2;
+            } else { // Поворот направо (вправо)
+                Cx = I + 1;
+                Cy = -I - 1;
+                R_arc = I - entry_x - 1;
+                start_angle = 0;
+                end_angle = -M_PI / 2;
+            }
+        } else { // Движение вниз
+            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вправо)
+                Cx = I;
+                Cy = I;
+                R_arc = I - entry_x; 
+                start_angle = M_PI;
+                end_angle = 3 * M_PI / 2;
+            } else { // Поворот направо (влево)
+                Cx = -I - 1;
+                Cy = I + 1;
+                R_arc = I + entry_x + 1;
+                start_angle = 2 * M_PI;
+                end_angle = 3 * M_PI / 2;
+            }
         }
     }
+
+    current_angle = start_angle + (end_angle - start_angle) * progress;
+    car->x = Cx + R_arc * cos(current_angle);
+    car->y = Cy + R_arc * sin(current_angle);
+
+    //Обновляем угол для отрисовки машины (касательная к дуге)
+    if (end_angle > start_angle) { // Против часовой стрелки
+        car->current_display_angle = current_angle + M_PI / 2;
+    } else { // По часовой стрелке
+        car->current_display_angle = current_angle - M_PI / 2;
+    }
+    // Перевод в градусы (для разных х, чтобы машины не поворачивали задом)
+    if (car->x < 0)
+        car->current_display_angle = car->current_display_angle * 180.0f / M_PI;
     else
-    {
-        if (car->turn_direction == TURN_LEFT)
-        {
-            car->x = -car->direction_y * intersection_size / 2 * sin(angle);
-            car->y = car->direction_y * intersection_size / 2 * cos(angle);
-        }
-        else
-        {
-            car->x = car->direction_y * intersection_size / 2 * sin(angle);
-            car->y = car->direction_y * intersection_size / 2 * cos(angle);
-        }
-    }
+        car->current_display_angle = current_angle * 180.0f / M_PI + 90.0f;
+
 
     // Завершение поворота
     if (car->turn_progress >= 1.0)
@@ -1721,42 +1924,55 @@ void executeTurn(AdvancedCar2 *car)
         car->will_turn = false;
 
         // Меняем направление согласно правостороннему движению
-        if (car->road_id == 0)
+        if (car->road_id == 0) // Горизонтальная -> Вертикальная
         {
-            if (car->turn_direction == TURN_LEFT)
-            {
-                car->direction_y = car->direction_x;
-            }
-            else
-            {
-                car->direction_y = -car->direction_x;
-            }
-            car->direction_x = 0;
             car->road_id = 1;
 
-            // Размещаем на правильной полосе
-            car->lane = (car->direction_y == 1) ? 1 : -1; // Вверх - правая (1), вниз - левая (-1)
-            car->x = car->lane * LINE_WIDTH;
-        }
-        else
-        {
             if (car->turn_direction == TURN_LEFT)
             {
-                car->direction_x = -car->direction_y;
+                // Поворот налево: сохраняем относительное направление
+                car->direction_y = car->direction_x;
+                // После левого поворота занимаем крайнюю левую полосу на новой дороге
+                car->lane = (car->direction_y == 1) ? 1 : -1;
             }
-            else
+            else // TURN_RIGHT
             {
-                car->direction_x = car->direction_y;
+                // Поворот направо: меняем направление на противоположное
+                car->direction_y = -car->direction_x;
+                // После правого поворота занимаем крайнюю правую полосу на новой дороге
+                car->lane = (car->direction_y == 1) ? lines_count : -lines_count;
             }
-            car->direction_y = 0;
+            
+            car->direction_x = 0;            
+            // Позиционируем на правильной полосе
+            car->x = car->lane * LINE_WIDTH;
+        }
+        else // Вертикальная -> Горизонтальная
+        {
             car->road_id = 0;
 
-            // Размещаем на правильной полосе
-            car->lane = (car->direction_x == 1) ? -1 : 1; // Вправо - левая (-1), влево - правая (1)
+            if (car->turn_direction == TURN_LEFT)
+            {
+                // Поворот налево: сохраняем относительное направление
+                car->direction_x = -car->direction_y;
+                // После левого поворота занимаем крайнюю левую полосу на новой дороге
+                car->lane = (car->direction_x == 1) ? -1 : 1;
+            }
+            else // TURN_RIGHT
+            {
+                // Поворот направо: меняем направление на противоположное
+                car->direction_x = car->direction_y;
+                // После правого поворота занимаем крайнюю правую полосу на новой дороге
+                car->lane = (car->direction_x == 1) ? -lines_count : lines_count;
+            }
+            
+            car->direction_y = 0;            
+            // Позиционируем на правильной полосе
             car->y = car->lane * LINE_WIDTH;
         }
     }
 }
+
 
 // безопасная скорость
 float calculateSpeedCrossroad(AdvancedCar2 *car, float distance)
@@ -1765,74 +1981,64 @@ float calculateSpeedCrossroad(AdvancedCar2 *car, float distance)
     return fmax(MIN_SPEED, fmin(car->max_speed, safe_speed));
 }
 
-// проверка для смены полосы
-bool isSafeToChangeCrossroad(AdvancedCar2 *car, char new_lane, float *safe_speed)
-{
+// проверка для смены полосы (адаптированная версия)
+bool isSafeToChangeCrossroad(AdvancedCar2 *car, char new_lane, float *safe_speed, AdvancedCar2 *all_cars, int total_cars) {
     *safe_speed = car->max_speed;
     bool is_safe = true;
-
-    for (int i = 0; i < car_count; i++)
-    {
+    
+    for (int i = 0; i < total_cars; i++) {
         // не проверяем текущую машину
-        if (&cars[i] == car)
+        if (&all_cars[i] == car)
             continue;
         // не проверяем машины на встречных полосах
-        if (cars[i].road_id != car->road_id)
+        if (all_cars[i].road_id != car->road_id)
             continue;
-
-        int other_lane = cars[i].is_changing_lane ? (int)(cars[i].lane *
-                                                              (1 - cars[i].lane_change_progress) +
-                                                          cars[i].target_lane * cars[i].lane_change_progress)
-                                                  : cars[i].lane;
-
-        if (abs(other_lane - new_lane) < 1.5)
-        {
+            
+        int other_lane = all_cars[i].is_changing_lane ? 
+            (int)(all_cars[i].lane * (1 - all_cars[i].lane_change_progress) + 
+                  all_cars[i].target_lane * all_cars[i].lane_change_progress) 
+            : all_cars[i].lane;
+            
+        if (abs(other_lane - new_lane) < 1.5) {
             float dist;
             // Горизонтальная дорога
-            if (car->road_id == 0)
-            {
-                dist = fabs(cars[i].x - car->x);
+            if (car->road_id == 0) {
+                dist = fabs(all_cars[i].x - car->x);
             }
             // Вертикальная дорога
-            else
-            {
-                dist = fabs(cars[i].y - car->y);
+            else {
+                dist = fabs(all_cars[i].y - car->y);
             }
-
+            
             bool is_in_front;
-            if (car->road_id == 0)
-            {
-                is_in_front = (car->direction_x == 1 && cars[i].x > car->x) ||
-                              (car->direction_x == -1 && cars[i].x < car->x);
+            if (car->road_id == 0) {
+                is_in_front = (car->direction_x == 1 && all_cars[i].x > car->x) ||
+                              (car->direction_x == -1 && all_cars[i].x < car->x);
             }
-            else
-            {
-                is_in_front = (car->direction_y == 1 && cars[i].y > car->y) ||
-                              (car->direction_y == -1 && cars[i].y < car->y);
+            else {
+                is_in_front = (car->direction_y == 1 && all_cars[i].y > car->y) ||
+                              (car->direction_y == -1 && all_cars[i].y < car->y);
             }
-
-            if (is_in_front && dist < SAFE_DISTANCE * 3)
-            {
+            
+            if (is_in_front && dist < SAFE_DISTANCE * 3) {
                 float this_safe_speed = calculateSpeedCrossroad(car, dist);
-                if (this_safe_speed < *safe_speed)
-                {
+                if (this_safe_speed < *safe_speed) {
                     *safe_speed = this_safe_speed;
                 }
-
-                if (dist < SAFE_DISTANCE * 1.5)
-                {
+                
+                if (dist < SAFE_DISTANCE * 1.5) {
                     is_safe = false;
                 }
             }
         }
     }
-
+    
     return is_safe;
 }
 
-// избегаение столкновений на перекрестке
-void checkCollisionsCrossroad(AdvancedCar2 *car)
-{
+// избегание столкновений на перекрестке (адаптированная версия)
+void checkCollisionsCrossroad(AdvancedCar2 *car, AdvancedCar2 *all_cars, int total_cars) {
+
     car->is_braking = false;
     car->has_priority = true;
     car->in_intersection = (fabs(car->x) < intersection_size && fabs(car->y) < intersection_size);
@@ -1859,7 +2065,7 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
         return;
     }
 
-    // Проверка приближения к перекрестку при красном свете
+    //Проверка приближения к перекрестку при красном свете
     if (has_red_light)
     {
         float dist_to_stop = fabs(*main_coord) - intersection_size;
@@ -1894,14 +2100,14 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
     }
 
     // Проверка столкновений с другими машинами
-    for (int i = 0; i < car_count; i++)
+    for (int i = 0; i < total_cars; i++)
     {
-        if (&cars[i] == car)
+        if (&all_cars[i] == car)
             continue;
 
         // Проверяем только машины на той же дороге или на перекрестке
-        bool same_road = (cars[i].road_id == car->road_id);
-        bool both_in_intersection = (car->in_intersection && cars[i].in_intersection);
+        bool same_road = (all_cars[i].road_id == car->road_id);
+        bool both_in_intersection = (car->in_intersection && all_cars[i].in_intersection);
 
         if (!same_road && !both_in_intersection)
             continue;
@@ -1913,10 +2119,10 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
             car_lane = car->lane * (1 - car->lane_change_progress) + car->target_lane * car->lane_change_progress;
         }
 
-        float other_lane = cars[i].lane;
-        if (cars[i].is_changing_lane)
+        float other_lane = all_cars[i].lane;
+        if (all_cars[i].is_changing_lane)
         {
-            other_lane = cars[i].lane * (1 - cars[i].lane_change_progress) + cars[i].target_lane * cars[i].lane_change_progress;
+            other_lane = all_cars[i].lane * (1 - all_cars[i].lane_change_progress) + all_cars[i].target_lane * all_cars[i].lane_change_progress;
         }
 
         float lane_distance = fabs(car_lane - other_lane) * LINE_WIDTH;
@@ -1925,11 +2131,11 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
             float path_distance;
             if (same_road)
             {
-                path_distance = (car->road_id == 0) ? fabs(cars[i].x - car->x) : fabs(cars[i].y - car->y);
+                path_distance = (car->road_id == 0) ? fabs(all_cars[i].x - car->x) : fabs(all_cars[i].y - car->y);
             }
             else // На перекрестке
             {
-                path_distance = sqrt(pow(cars[i].x - car->x, 2) + pow(cars[i].y - car->y, 2));
+                path_distance = sqrt(pow(all_cars[i].x - car->x, 2) + pow(all_cars[i].y - car->y, 2));
             }
 
             bool is_in_front;
@@ -1937,13 +2143,13 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
             {
                 if (car->road_id == 0)
                 {
-                    is_in_front = (car->direction_x == 1 && cars[i].x > car->x) ||
-                                  (car->direction_x == -1 && cars[i].x < car->x);
+                    is_in_front = (car->direction_x == 1 && all_cars[i].x > car->x) ||
+                                  (car->direction_x == -1 && all_cars[i].x < car->x);
                 }
                 else
                 {
-                    is_in_front = (car->direction_y == 1 && cars[i].y > car->y) ||
-                                  (car->direction_y == -1 && cars[i].y < car->y);
+                    is_in_front = (car->direction_y == 1 && all_cars[i].y > car->y) ||
+                                  (car->direction_y == -1 && all_cars[i].y < car->y);
                 }
             }
             else // На перекрестке учитываем все направления
@@ -1983,81 +2189,71 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
     car->just_have_turn = false;
 }
 
-// решение о смене полосы
-void decideChangeCrossroad(AdvancedCar2 *car)
-{
+// решение о смене полосы (адаптированная версия)
+void decideChangeCrossroad(AdvancedCar2 *car, AdvancedCar2 *all_cars, int total_cars) {
     if (car->is_changing_lane)
         return;
     if (car->is_braking)
         return;
-
+        
     // Не перестраиваемся на перекрестке
     if (car->in_intersection)
         return;
     if (car->is_turning)
         return;
-
+        
     bool slow_car_ahead = false;
     float min_distance = SAFE_DISTANCE * 3;
-
-    for (int i = 0; i < car_count; i++)
-    {
-        if (&cars[i] == car)
+    
+    for (int i = 0; i < total_cars; i++) {
+        if (&all_cars[i] == car)
             continue;
-        if (cars[i].road_id != car->road_id)
+        if (all_cars[i].road_id != car->road_id)
             continue;
-        if (cars[i].lane != car->lane)
+        if (all_cars[i].lane != car->lane)
             continue;
-
+            
         float dist;
-        if (car->road_id == 0)
-        {
-            dist = fabs(cars[i].x - car->x);
+        if (car->road_id == 0) {
+            dist = fabs(all_cars[i].x - car->x);
         }
-        else
-        {
-            dist = fabs(cars[i].y - car->y);
+        else {
+            dist = fabs(all_cars[i].y - car->y);
         }
-
+        
         bool is_in_front;
-        if (car->road_id == 0)
-        {
-            is_in_front = (car->direction_x == 1 && cars[i].x > car->x) ||
-                          (car->direction_x == -1 && cars[i].x < car->x);
+        if (car->road_id == 0) {
+            is_in_front = (car->direction_x == 1 && all_cars[i].x > car->x) ||
+                          (car->direction_x == -1 && all_cars[i].x < car->x);
         }
-        else
-        {
-            is_in_front = (car->direction_y == 1 && cars[i].y > car->y) ||
-                          (car->direction_y == -1 && cars[i].y < car->y);
+        else {
+            is_in_front = (car->direction_y == 1 && all_cars[i].y > car->y) ||
+                          (car->direction_y == -1 && all_cars[i].y < car->y);
         }
-
-        if (is_in_front && dist < min_distance)
-        {
+        
+        if (is_in_front && dist < min_distance) {
             min_distance = dist;
-
-            if (dist < SAFE_DISTANCE * 2 && cars[i].speed < car->max_speed * 0.8)
-            {
+            
+            if (dist < SAFE_DISTANCE * 2 && all_cars[i].speed < car->max_speed * 0.8) {
                 slow_car_ahead = true;
             }
         }
     }
-
+    
     if (!slow_car_ahead)
         return;
-
-    for (int dl = -1; dl <= 1; dl += 2)
-    {
+        
+    for (int dl = -1; dl <= 1; dl += 2) {
         int new_lane = car->lane + dl;
-
+        
         // Не перестраиваемся на центральную линию - островок безопасности
         if (new_lane == 0)
             continue;
         if (abs(new_lane) > lines_count)
             continue;
-
+            
         float safe_speed;
-        if (isSafeToChangeCrossroad(car, new_lane, &safe_speed))
-        {
+        if (isSafeToChangeCrossroad(car, new_lane, &safe_speed, all_cars, total_cars)) {
             car->target_lane = new_lane;
             car->is_changing_lane = true;
             car->lane_change_progress = 0.0;
@@ -2079,82 +2275,240 @@ void updateTrafficLight()
     }
 }
 
-// обновление машин для перекрестка
-void updateCars()
-{
-    updateTrafficLight();
-
-    for (int i = 0; i < car_count; i++)
-    {
-        checkCollisionsCrossroad(&cars[i]);
-
-        // Решение о повороте
-        if (!cars[i].is_turning && !cars[i].will_turn)
-        {
-            decideTurn(&cars[i]);
-        }
-
-        // Выполнение поворота
-        if (cars[i].will_turn || cars[i].is_turning)
-        {
-            executeTurn(&cars[i]);
-        }
-
-        // Решение о перестроении
-        if (!cars[i].is_changing_lane && rand() % 100 < 20)
-        {
-            decideChangeCrossroad(&cars[i]);
-        }
-
-        // Обработка перестроения
-        if (cars[i].is_changing_lane && !cars[i].is_turning)
-        {
-            if (cars[i].speed > cars[i].target_speed)
-            {
-                cars[i].speed = fmax(cars[i].target_speed, cars[i].speed * BRAKING_FACTOR);
-                cars[i].is_braking = true;
-            }
-
-            if (cars[i].speed <= cars[i].target_speed * 1.1)
-            {
-                cars[i].lane_change_progress += LANE_CHANGE_SPEED;
-
-                if (cars[i].lane_change_progress >= 1.0)
-                {
-                    cars[i].lane = cars[i].target_lane;
-                    cars[i].is_changing_lane = false;
-                    cars[i].target_lane = -1;
+// Получение всех машин со всех полос для обработки столкновений
+int get_all_crossroad_cars(AdvancedCar2 *all_cars) {
+    int total_count = 0;
+    
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int lane_idx = 0; lane_idx < crossroad_lane_count; lane_idx++) {
+                ListCrossroadCar *current = crossroad_lanes[road][dir][lane_idx];
+                while (current != NULL && total_count < MAX_CARS) {
+                    all_cars[total_count++] = current->car;
+                    current = current->next;
                 }
             }
         }
+    }
+    return total_count;
+}
 
-        // Обычное движение
-        if (!cars[i].is_turning)
-        {
-            // Горизонтальная дорога
-            if (cars[i].road_id == 0)
-            {
-                cars[i].x += cars[i].speed * cars[i].direction_x;
-
-                if ((cars[i].direction_x == 1 && cars[i].x > WINDOW_BORDER) ||
-                    (cars[i].direction_x == -1 && cars[i].x < -WINDOW_BORDER))
-                {
-                    cars[i].x = (cars[i].direction_x == 1) ? -WINDOW_BORDER - 1 : WINDOW_BORDER + 1;
-                    cars[i].lane = getRandomLane(cars[i].road_id, cars[i].direction_x);
-                    cars[i].y = cars[i].lane * LINE_WIDTH;
-                }
-            }
-            // Вертикальная дорога
+// Обновление машины в списке
+void update_crossroad_car_in_list(ListCrossroadCar *node, AdvancedCar2 *all_cars, int total_cars) {
+    if (!node) return;
+    
+    // Сохраняем текущее состояние
+    AdvancedCar2 *car = &node->car;
+    
+    // Проверка столкновений используя все машины
+    checkCollisionsCrossroad(car, all_cars, total_cars);
+    
+    // Если машина будет поворачивать она должна снижать скорость
+    if (car->will_turn && !car->is_turning) {
+        if ((car->x > -intersection_size * 3 && car->x < -intersection_size) ||
+            (car->x < intersection_size * 3 && car->x > intersection_size) ||
+            (car->y > -intersection_size * 3 && car->y < -intersection_size) ||
+            (car->y < intersection_size * 3 && car->y > intersection_size)) {
+            if (car->speed > TURN_SPEED)
+                car->speed *= 0.95;
             else
-            {
-                cars[i].y += cars[i].speed * cars[i].direction_y;
+                car->speed = TURN_SPEED;
+        }
+    }
+    
+    // Выполнение поворота
+    if (car->will_turn || car->is_turning) {
+        executeTurn(car);
+    }
+    
+    // Решение о перестроении
+    if (!car->is_changing_lane && rand() % 100 < 20) {
+        decideChangeCrossroad(car, all_cars, total_cars);
+    }
+    
+    // Обработка перестроения
+    if (car->is_changing_lane && !car->is_turning) {
+        if (car->speed > car->target_speed) {
+            car->speed = fmax(car->target_speed, car->speed * BRAKING_FACTOR);
+            car->is_braking = true;
+        }
+        
+        if (car->speed <= car->target_speed * 1.1) {
+            car->lane_change_progress += LANE_CHANGE_SPEED;
+            
+            if (car->lane_change_progress >= 1.0) {
+                car->lane = car->target_lane;
+                car->is_changing_lane = false;
+                car->target_lane = -1;
+            }
+        }
+    }
+    
+    // Обычное движение
+    if (!car->is_turning) {
+        // Горизонтальная дорога
+        if (car->road_id == 0) {
+            car->x += car->speed * car->direction_x;
+        }
+        // Вертикальная дорога
+        else {
+            car->y += car->speed * car->direction_y;
+        }
+    }
+    
+    // Обновляем узел списка
+    node->car = *car;
+}
 
-                if ((cars[i].direction_y == 1 && cars[i].y > WINDOW_BORDER) ||
-                    (cars[i].direction_y == -1 && cars[i].y < -WINDOW_BORDER))
-                {
-                    cars[i].y = (cars[i].direction_y == 1) ? -WINDOW_BORDER - 1 : WINDOW_BORDER + 1;
-                    cars[i].lane = getRandomLane(cars[i].road_id, cars[i].direction_y);
-                    cars[i].x = cars[i].lane * LINE_WIDTH;
+// // обновление машин для перекрестка
+// void updateCars()
+// {
+//     updateTrafficLight();
+
+//     for (int i = 0; i < car_count; i++)
+//     {
+//         checkCollisionsCrossroad(&cars[i]);
+
+//         // Если машина будет поворачивать она должна снижать скорость
+//         if (cars[i].will_turn && !cars[i].is_turning) // Машина планирует поворот, но еще не начала его
+//         {
+//             if ((cars[i].x > -intersection_size * 3 && cars[i].x < -intersection_size) ||
+//                 (cars[i].x < intersection_size * 3 && cars[i].x > intersection_size) ||
+//                 (cars[i].y > -intersection_size * 3 && cars[i].y < -intersection_size) ||
+//                 (cars[i].y < intersection_size * 3 && cars[i].y > intersection_size))
+                
+//                 if (cars[i].speed > TURN_SPEED)
+//                     cars[i].speed *= 0.95;
+//                 else
+//                     cars[i].speed = TURN_SPEED;
+//         }
+
+
+//         // Выполнение поворота
+//         if (cars[i].will_turn || cars[i].is_turning)
+//         {
+//             executeTurn(&cars[i]);
+//         }
+
+//         // Решение о перестроении
+//         if (!cars[i].is_changing_lane && rand() % 100 < 20)
+//         {
+//             decideChangeCrossroad(&cars[i]);
+//         }
+
+//         // Обработка перестроения
+//         if (cars[i].is_changing_lane && !cars[i].is_turning)
+//         {
+//             if (cars[i].speed > cars[i].target_speed)
+//             {
+//                 cars[i].speed = fmax(cars[i].target_speed, cars[i].speed * BRAKING_FACTOR);
+//                 cars[i].is_braking = true;
+//             }
+
+//             if (cars[i].speed <= cars[i].target_speed * 1.1)
+//             {
+//                 cars[i].lane_change_progress += LANE_CHANGE_SPEED;
+
+//                 if (cars[i].lane_change_progress >= 1.0)
+//                 {
+//                     cars[i].lane = cars[i].target_lane;
+//                     cars[i].is_changing_lane = false;
+//                     cars[i].target_lane = -1;
+//                 }
+//             }
+//         }
+
+//         // Обычное движение
+//         if (!cars[i].is_turning)
+//         {
+//             // Горизонтальная дорога
+//             if (cars[i].road_id == 0)
+//             {
+//                 cars[i].x += cars[i].speed * cars[i].direction_x;
+
+//                 // УДАЛЕНИЕ машины вместо телепортации
+//                 if ((cars[i].direction_x == 1 && cars[i].x > WINDOW_BORDER + 2) ||
+//                     (cars[i].direction_x == -1 && cars[i].x < -WINDOW_BORDER - 2))
+//                 {
+//                     // Удаляем машину из массива
+//                     for (int j = i; j < car_count - 1; j++)
+//                     {
+//                         cars[j] = cars[j + 1];
+//                     }
+//                     car_count--;
+//                     continue; // Пропускаем оставшуюся обработку для удаленной машины
+//                 }
+//             }
+//             // Вертикальная дорога
+//             else
+//             {
+//                 cars[i].y += cars[i].speed * cars[i].direction_y;
+
+//                 // УДАЛЕНИЕ машины вместо телепортации
+//                 if ((cars[i].direction_y == 1 && cars[i].y > WINDOW_BORDER + 2) ||
+//                     (cars[i].direction_y == -1 && cars[i].y < -WINDOW_BORDER - 2))
+//                 {
+//                     // Удаляем машину из массива
+//                     for (int j = i; j < car_count - 1; j++)
+//                     {
+//                         cars[j] = cars[j + 1];
+//                     }
+//                     car_count--;
+//                     continue; // Пропускаем оставшуюся обработку для удаленной машины
+//                 }
+//             }
+//         }
+//     }
+// }
+
+// обновление машин для перекрестка (адаптированная версия)
+void updateCars() {
+    updateTrafficLight();
+    
+    // Собираем все машины для обработки столкновений
+    AdvancedCar2 all_cars[MAX_CARS];
+    int total_cars = get_all_crossroad_cars(all_cars);
+    
+    // Обновляем каждую полосу
+    for (int road = 0; road < 2; road++) {
+        for (int dir = 0; dir < 2; dir++) {
+            for (int lane_idx = 0; lane_idx < crossroad_lane_count; lane_idx++) {
+                ListCrossroadCar *current = crossroad_lanes[road][dir][lane_idx];
+                ListCrossroadCar *prev = NULL;
+                
+                while (current != NULL) {
+                    // Обновляем машину
+                    update_crossroad_car_in_list(current, all_cars, total_cars);
+                    
+                    // Проверяем, нужно ли удалить машину (выехала за пределы)
+                    AdvancedCar2 *car = &current->car;
+                    bool should_remove = false;
+                    
+                    if (car->road_id == 0) {
+                        should_remove = (car->direction_x == 1 && car->x > WINDOW_BORDER + 2) ||
+                                       (car->direction_x == -1 && car->x < -WINDOW_BORDER - 2);
+                    } else {
+                        should_remove = (car->direction_y == 1 && car->y > WINDOW_BORDER + 2) ||
+                                       (car->direction_y == -1 && car->y < -WINDOW_BORDER - 2);
+                    }
+                    
+                    if (should_remove) {
+                        ListCrossroadCar *to_remove = current;
+                        
+                        if (prev == NULL) {
+                            // Удаляем голову списка
+                            crossroad_lanes[road][dir][lane_idx] = current->next;
+                        } else {
+                            // Удаляем из середины/конца
+                            prev->next = current->next;
+                        }
+                        
+                        current = current->next;
+                        free(to_remove);
+                    } else {
+                        prev = current;
+                        current = current->next;
+                    }
                 }
             }
         }
@@ -2170,7 +2524,7 @@ void addCrossroadCar()
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    if (current_time - last_add_time < 1.5)
+    if (current_time - last_add_time < 1.5) // генерация машин раз в N секунд
         return;
 
     last_add_time = current_time;
@@ -2178,6 +2532,15 @@ void addCrossroadCar()
     char road_id = rand() % 2; // 0 - горизонтальная, 1 - вертикальная
     char direction = (rand() % 2) ? 1 : -1;
     char lane = getRandomLane(road_id, direction);
+
+    // Получаем соответствующую полосу
+    int lane_index = get_crossroad_lane_index(road_id, direction, abs(lane));
+    ListCrossroadCar **current_lane = &crossroad_lanes[road_id][direction == 1 ? 0 : 1][lane_index];
+    
+    // Проверяем ограничение по количеству машин в полосе
+    if (count_crossroad_cars(*current_lane) >= MAX_LANE_CAR)
+        return;
+
     float start_x, start_y;
 
     if (road_id == 0)
@@ -2261,7 +2624,18 @@ void addCrossroadCar()
     new_car.road_id = road_id;
     new_car.just_have_turn = false;
 
-    cars[car_count++] = new_car;
+    if (road_id == 0) // Горизонтальная дорога
+        new_car.current_display_angle = (direction == 1) ? 0 : 180;
+    else // Вертикальная дорога
+        new_car.current_display_angle = (direction == 1) ? 90 : 270;
+    
+    // Решение о повороте сразу после добавления
+    decideTurn(&new_car);
+
+    //cars[car_count++] = new_car;
+    // добавляем в соответствующую полосу
+    insert_crossroad_car(current_lane, new_car);
+
 }
 
 // отображение перекрестка
@@ -2272,10 +2646,14 @@ void displayCrossroad()
     drawRoads();
     drawIntersection();
 
-    for (int i = 0; i < car_count; i++)
-    {
-        drawCrossroadCar(cars[i]);
-    }
+    // for (int i = 0; i < car_count; i++)
+    // {
+    //     drawCrossroadCar(cars[i]);
+    // }
+
+    // Используем функцию для отрисовки всех машин
+    draw_all_crossroad_cars();
+
 
     infoStatistic(true);
 
