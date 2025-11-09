@@ -16,7 +16,7 @@
 //#define MIN_SPEED 0.05f
 #define MIN_SPEED 0.2f
 // #define MAX_SPEED 0.1f
-#define MAX_SPEED 0.3f
+#define MAX_SPEED 0.25f
 #define TURN_SPEED 0.15f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
@@ -69,23 +69,23 @@ typedef enum
 } CarState;
 
 // структура для машин на автостраде
-typedef struct
-{
-    float position; // положение на полосе
-    float speed;
-    float max_speed;
-    char lane;
-    char target_lane; // для перестроения
-    float lane_change_progress;
-    char direction;
-    float color[3];
-    bool is_changing_lane;
-    bool is_braking;
-    float target_speed; // скорость после торможения
+// typedef struct
+// {
+//     float position; // положение на полосе
+//     float speed;
+//     float max_speed;
+//     char lane;
+//     char target_lane; // для перестроения
+//     float lane_change_progress;
+//     char direction;
+//     float color[3];
+//     bool is_changing_lane;
+//     bool is_braking;
+//     float target_speed; // скорость после торможения
 
-    CarState state;
-    float fixed_position;
-} AdvancedCar;
+//     CarState state;
+//     float fixed_position;
+// } AdvancedCar;
 
 // структура для машин на перекрестке
 typedef struct
@@ -122,7 +122,7 @@ typedef struct
 
 // Глобальные переменные
 
-AdvancedCar advanced_cars[MAX_CARS]; // машины на автостраде
+// AdvancedCar advanced_cars[MAX_CARS]; // машины на автостраде
 AdvancedCar2 cars[MAX_CARS];         // машины на перекрестке
 
 clock_t start_time; // начальное время для таймера
@@ -137,7 +137,6 @@ char button_hover = -1;     // флаг наведения мыши на кно�
 bool in_simulation = false; // флаг определения начала моделирования
 double last_time = 0.0;     // последнее время (для режима паузы)
 
-// int car_count = 0; // текущее количество машин, которые инициализированы
 
 bool horizontal_green = true; // Светофор для горизонтальной дороги
 float last_light_switch = 0;
@@ -170,15 +169,10 @@ void displayTime(float x, float y);
 void drawHighway();
 void initHighwayCar();
 
-// void drawHighwayCar(AdvancedCar car);
 void displayHighway();
 void updateHighway(int value);
 
-// float calculateSafeSpeed(AdvancedCar *car, float distance);
-// bool isSafeToChangeLane(AdvancedCar *car, char new_lane, float *safe_speed);
-// void checkCollisionAvoidance(AdvancedCar *car);
-void decideLaneChange(AdvancedCar *car);
-// void updateAdvancedCars();
+// void decideLaneChange(AdvancedCar *car);
 void addRandomCar();
 
 // перекресток

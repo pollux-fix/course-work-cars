@@ -10,23 +10,11 @@ typedef enum CarDirection
     LEFT
 } CarDirection;
 
-// на какой полосе из всех машина находится
-// макс сколько полос может быть
-// typedef enum CarLane
-// {
-//     ONE,
-//     TWO,
-//     THREE,
-//     FOUR,
-//     FIVE
-// } CarLane;
-
 typedef struct
 {
     float speed;
     float max_speed;
     CarDirection direction;
-    // CarLane lane;
     char lane;
 
     float color[3];
@@ -43,18 +31,8 @@ typedef struct
 typedef struct ListCar
 {
     CarNode car;
-    // struct ListCar *prev;
     struct ListCar *next;
 } ListCar;
-
-// // to right
-// ListCar *lane_1 = NULL;
-// ListCar *lane_2 = NULL;
-// ListCar *lane_3 = NULL;
-// // to left
-// ListCar *lane_m1 = NULL;
-// ListCar *lane_m2 = NULL;
-// ListCar *lane_m3 = NULL;
 
 //------------------------------------------------------------
 // Массив указателей на списки полос

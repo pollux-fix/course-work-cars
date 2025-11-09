@@ -3,19 +3,9 @@
 #include "head_test.h"
 #include "head_list.h"
 
-#define MIN_SPEED 0.2f
-#define MAX_SPEED 0.3f
-
-/*
-добавлены тут, чтобы из заголовочного не комментить каждый раз
-потому что в файле лист_кар_тест они немного поменяны
-*/
 int car_count = 0; // текущее количество машин, которые инициализированы
 
-// void drawHighwayCar(AdvancedCar car);
-// void updateAdvancedCars();
-// float calculateSafeSpeed(AdvancedCar *car, float distance);
-// void checkCollisionAvoidance(AdvancedCar *car);
+
 
 int main(int argc, char **argv)
 {
@@ -219,8 +209,6 @@ void menuWindow()
     glRasterPos2f(0.2f, 0.25f);
     for (int i = 0; i < strlen(str3); i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, str3[i]);
-
-    drawText(-0.3f, -0.3f, "(test) for highway - only 3 lanes available");
 
     // Кнопки выбора количества полос
     for (int i = 1; i <= 5; i++)
@@ -584,6 +572,9 @@ void initCrossroadCar()
 // инициализация машин на автостраде
 void initHighwayCar()
 {
+    // Инициализируем полосы
+    init_lanes(lines_count);
+
     for (int i = 0; i < 4; i++)
     {
         addRandomCar();
@@ -591,6 +582,104 @@ void initHighwayCar()
 }
 
 /* ПРЯМАЯ ДОРОГА */
+
+//-----------------------------------------------------------------
+// Реализация массива полос
+ListCar *lanes[MAX_LANES] = {NULL};
+int lane_count = 6; // По умолчанию 3 полосы в каждую сторону
+
+// Инициализация полос
+void init_lanes(int lanes_per_direction)
+{
+    // Освобождаем старые полосы, если они есть
+    free_all_lanes();
+
+    lane_count = lanes_per_direction * 2;
+
+    // Инициализируем все указатели в NULL
+    for (int i = 0; i < MAX_LANES; i++)
+    {
+        lanes[i] = NULL;
+    }
+}
+
+// Освобождение памяти всех полос
+void free_all_lanes(void)
+{
+    for (int i = 0; i < MAX_LANES; i++)
+    {
+        ListCar *current = lanes[i];
+        while (current != NULL)
+        {
+            ListCar *to_free = current;
+            current = current->next;
+            free(to_free);
+        }
+        lanes[i] = NULL;
+    }
+}
+
+// Получение индекса полосы в массиве
+int get_lane_index(CarDirection direction, char lane_number)
+{
+    if (direction == RIGHT)
+    {
+        return lane_number - 1; // Правые полосы: 0, 1, 2...
+    }
+    else
+    {
+        return (lane_count / 2) + (lane_number - 1); // Левые полосы
+    }
+}
+
+// Получение указателя на список полосы
+ListCar *get_lane(CarDirection direction, char lane_number)
+{
+    int index = get_lane_index(direction, lane_number);
+    if (index >= 0 && index < lane_count)
+    {
+        return lanes[index];
+    }
+    return NULL;
+}
+
+// Применение функции ко всем полосам
+void for_each_lane(void (*func)(ListCar *))
+{
+    for (int i = 0; i < lane_count; i++)
+    {
+        if (lanes[i] != NULL)
+        {
+            func(lanes[i]);
+        }
+    }
+}
+
+// Обновление всех машин
+void update_all_cars(void)
+{
+    for (int i = 0; i < lane_count; i++)
+    {
+        if (lanes[i] != NULL)
+        {
+            updateAdvancedCars(lanes[i]);
+        }
+    }
+}
+
+// Отрисовка всех машин
+void draw_all_cars(void)
+{
+    for (int i = 0; i < lane_count; i++)
+    {
+        ListCar *current = lanes[i];
+        while (current != NULL)
+        {
+            drawHighwayCar(current->car);
+            current = current->next;
+        }
+    }
+}
 
 int count_cars(ListCar *head)
 {
@@ -713,62 +802,6 @@ void drawHighway()
     glEnd();
 
     glColor3f(0.0, 0.0, 0.0);
-
-    // полосы вправо
-    for (int lane = 1; lane <= lines_count; lane++)
-    {
-        char lane_num[3];
-        sprintf(lane_num, "%d", lane);
-
-        glRasterPos2f(WINDOW_BORDER - 1.5, (lane)*LINE_WIDTH - 0.1);
-        for (char *c = lane_num; *c != '\0'; c++)
-        {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
-        }
-    }
-
-    // полосы влево
-    for (int lane = 1; lane <= lines_count; lane++)
-    {
-        char lane_num[3];
-        sprintf(lane_num, "-%d", lane);
-
-        glRasterPos2f(-WINDOW_BORDER + 0.5, (-lane) * LINE_WIDTH - 0.1);
-        for (char *c = lane_num; *c != '\0'; c++)
-        {
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
-        }
-    }
-
-    // при флаге дтп
-    if (accident_flag)
-    {
-        const char str[4][100] = {"ACCIDENT MODE", "choose lane and wait", "cars will be red, if them in accident"};
-
-        glColor3f(1.0f, 1.0f, 1.0f);
-        float y_pos = -12.0f;
-        for (int i = 0; i < 4; i++)
-        {
-            glRasterPos2f(10.0f, y_pos);
-            for (int j = 0; j < strlen(str[i]); j++)
-            {
-                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
-            }
-            y_pos -= 1.0f;
-        }
-        // кнопки выбора полосы
-
-        for (int i = -lines_count; i <= lines_count; i++)
-        {
-            if (i == 0)
-                continue;
-
-            char label[10];
-            sprintf(label, "%d", i);
-            bool active = (accident_lane == i);
-            drawButtonNumber(WINDOW_BORDER / 2 + (i - 1) * 1.2f, -WINDOW_BORDER + 2, 1.0f, 1.5f, label, active);
-        }
-    }
 }
 
 void drawHighwayCar(CarNode car)
@@ -868,48 +901,8 @@ void displayHighway()
     // отрисовка машин
     glColor3f(0.25f, 0.25f, 1.0f);
 
-    // struct ListCar *current = highway_car;
-    struct ListCar *current1 = lane_1;
-    while (current1 != NULL)
-    {
-        drawHighwayCar(current1->car);
-        current1 = current1->next;
-    }
-
-    struct ListCar *current2 = lane_2;
-    while (current2 != NULL)
-    {
-        drawHighwayCar(current2->car);
-        current2 = current2->next;
-    }
-
-    struct ListCar *current3 = lane_3;
-    while (current3 != NULL)
-    {
-        drawHighwayCar(current3->car);
-        current3 = current3->next;
-    }
-
-    struct ListCar *current4 = lane_m1;
-    while (current4 != NULL)
-    {
-        drawHighwayCar(current4->car);
-        current4 = current4->next;
-    }
-
-    struct ListCar *current5 = lane_m2;
-    while (current5 != NULL)
-    {
-        drawHighwayCar(current5->car);
-        current5 = current5->next;
-    }
-
-    struct ListCar *current6 = lane_m3;
-    while (current6 != NULL)
-    {
-        drawHighwayCar(current6->car);
-        current6 = current6->next;
-    }
+    // Используем новую универсальную функцию
+    draw_all_cars();
 
     glutSwapBuffers();
 }
@@ -921,12 +914,7 @@ void updateHighway(int value)
     if (track)
     {
         addRandomCar();
-        updateAdvancedCars(lane_1);
-        updateAdvancedCars(lane_2);
-        updateAdvancedCars(lane_3);
-        updateAdvancedCars(lane_m1);
-        updateAdvancedCars(lane_m2);
-        updateAdvancedCars(lane_m3);
+        update_all_cars();
     }
 
     glutPostRedisplay();
@@ -989,7 +977,6 @@ void checkCollisionAvoidance(ListCar *current)
     }
 }
 
-
 // обновляем рисовку машинок на автостраде
 void updateAdvancedCars(ListCar *head)
 {
@@ -1036,40 +1023,23 @@ void addRandomCar()
     last_add_time = current_time;
 
     // Добавляем машины на все доступные полосы
-    if (count_cars(lane_1) < MAX_LANE_CAR)
+    for (int lane_num = 1; lane_num <= lane_count / 2; lane_num++)
     {
-        CarNode new_car = create_highway_car(RIGHT, 1);
-        insert_car(&lane_1, new_car);
-    }
+        // Правые полосы
+        int right_index = get_lane_index(RIGHT, lane_num);
+        if (count_cars(lanes[right_index]) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, lane_num);
+            insert_car(&lanes[right_index], new_car);
+        }
 
-    if (count_cars(lane_2) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(RIGHT, 2);
-        insert_car(&lane_2, new_car);
-    }
-
-    if (count_cars(lane_3) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(RIGHT, 3);
-        insert_car(&lane_3, new_car);
-    }
-
-    if (count_cars(lane_m1) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 1);
-        insert_car(&lane_m1, new_car);
-    }
-
-    if (count_cars(lane_m2) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 2);
-        insert_car(&lane_m2, new_car);
-    }
-
-    if (count_cars(lane_m3) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 3);
-        insert_car(&lane_m3, new_car);
+        // Левые полосы
+        int left_index = get_lane_index(LEFT, lane_num);
+        if (count_cars(lanes[left_index]) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, lane_num);
+            insert_car(&lanes[left_index], new_car);
+        }
     }
 }
 
@@ -2283,7 +2253,11 @@ void saveSimulation(const char *filename)
 
         if (type_simulation == HIGHWAY)
         {
+            printf("come later \n");
+
             // Сохраняем параметры AdvancedCar для автострады
+
+            /*
             fprintf(file, "  Type: AdvancedCar\n");
             fprintf(file, "  Position: %.2f\n", advanced_cars[i].position);
             fprintf(file, "  Speed: %.2f\n", advanced_cars[i].speed);
@@ -2299,6 +2273,7 @@ void saveSimulation(const char *filename)
             fprintf(file, "  IsChangingLane: %d\n", advanced_cars[i].is_changing_lane);
             fprintf(file, "  IsBraking: %d\n", advanced_cars[i].is_braking);
             fprintf(file, "  TargetSpeed: %.2f\n", advanced_cars[i].target_speed);
+            */
         }
         else
         {
@@ -2401,6 +2376,8 @@ void loadSimulation(const char *filename)
         // Загрузка AdvancedCar
         else if (!car_type && current_car >= 0)
         {
+            printf("come later \n");
+            /*
             if (strstr(line, "Position:") != NULL)
             {
                 sscanf(line, "  Position: %f", &advanced_cars[current_car].position);
@@ -2452,6 +2429,7 @@ void loadSimulation(const char *filename)
             {
                 sscanf(line, "  TargetSpeed: %f", &advanced_cars[current_car].target_speed);
             }
+                */
         }
         // Загрузка AdvancedCar2
         else if (car_type && current_car >= 0)
@@ -2569,11 +2547,13 @@ void loadSimulation(const char *filename)
     // Запускаем соответствующую симуляцию
     if (type_simulation == HIGHWAY)
     {
+        /*
         start_time = clock();
         init();
         in_simulation = true;
         glutDisplayFunc(displayHighway);
         glutTimerFunc(0, updateHighway, 0);
+        */
     }
     else if (type_simulation == CROSSROAD)
     {

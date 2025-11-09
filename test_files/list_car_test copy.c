@@ -122,7 +122,6 @@ int main(int argc, char **argv)
 }
 
 
-// ТУТ ПРОСТО ПРОВЕРИТЬ ВЫЗОВ ФУНКЦИЙ ПРЯМОЙ ДОРОГИ - КОГДА ВСТРАИВАТЬ БУДУ
 /*МЕНЮ И КНОПКИ*/
 
 // обработка нажатия мыши
@@ -832,49 +831,6 @@ void displayHighway()
     // Используем новую универсальную функцию
     draw_all_cars();
 
-    // // struct ListCar *current = highway_car;
-    // struct ListCar *current1 = lane_1;
-    // while (current1 != NULL)
-    // {
-    //     drawHighwayCar(current1->car);
-    //     current1 = current1->next;
-    // }
-
-    // struct ListCar *current2 = lane_2;
-    // while (current2 != NULL)
-    // {
-    //     drawHighwayCar(current2->car);
-    //     current2 = current2->next;
-    // }
-
-    // struct ListCar *current3 = lane_3;
-    // while (current3 != NULL)
-    // {
-    //     drawHighwayCar(current3->car);
-    //     current3 = current3->next;
-    // }
-
-    // struct ListCar *current4 = lane_m1;
-    // while (current4 != NULL)
-    // {
-    //     drawHighwayCar(current4->car);
-    //     current4 = current4->next;
-    // }
-
-    // struct ListCar *current5 = lane_m2;
-    // while (current5 != NULL)
-    // {
-    //     drawHighwayCar(current5->car);
-    //     current5 = current5->next;
-    // }
-
-    // struct ListCar *current6 = lane_m3;
-    // while (current6 != NULL)
-    // {
-    //     drawHighwayCar(current6->car);
-    //     current6 = current6->next;
-    // }
-
     glutSwapBuffers();
 }
 
@@ -884,13 +840,6 @@ void updateHighway(int value)
     if (track)
     {
         addRandomCar();
-        // updateAdvancedCars(lane_1);
-        // updateAdvancedCars(lane_2);
-        // updateAdvancedCars(lane_3);
-        // updateAdvancedCars(lane_m1);
-        // updateAdvancedCars(lane_m2);
-        // updateAdvancedCars(lane_m3);
-
         update_all_cars();
     }
 
@@ -941,43 +890,6 @@ void addRandomCar()
 
     last_add_time = current_time;
 
-    // // Добавляем машины на все доступные полосы
-    // if (count_cars(lane_1) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(RIGHT, 1);
-    //     insert_car(&lane_1, new_car);
-    // }
-
-    // if (count_cars(lane_2) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(RIGHT, 2);
-    //     insert_car(&lane_2, new_car);
-    // }
-
-    // if (count_cars(lane_3) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(RIGHT, 3);
-    //     insert_car(&lane_3, new_car);
-    // }
-
-    // if (count_cars(lane_m1) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(LEFT, 1);
-    //     insert_car(&lane_m1, new_car);
-    // }
-
-    // if (count_cars(lane_m2) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(LEFT, 2);
-    //     insert_car(&lane_m2, new_car);
-    // }
-
-    // if (count_cars(lane_m3) < MAX_LANE_CAR)
-    // {
-    //     CarNode new_car = create_highway_car(LEFT, 3);
-    //     insert_car(&lane_m3, new_car);
-    // }
-
     // Добавляем машины на все доступные полосы
     for (int lane_num = 1; lane_num <= lane_count / 2; lane_num++) {
         // Правые полосы
@@ -1018,7 +930,6 @@ CarNode create_highway_car(CarDirection direction, char lane)
     else
     {
         car.position = WINDOW_BORDER + 1 + (rand() % 10);
-        // car.lane = -car.lane;
     }
 
 
@@ -1061,10 +972,6 @@ void insert_car(ListCar **head, CarNode car)
     }
 }
 
-/*
-ВОТ ТУТ ИЗМЕНИТЬ НА СПИСОК + ВСТРОИТЬ
-*/
-
 // подсчет оптимальной скорости в торможении
 float calculateSafeSpeed(CarNode car, float distance)
 {
@@ -1076,7 +983,6 @@ float calculateSafeSpeed(CarNode car, float distance)
 
 
 // проверка для предотвращения дтп
- // ЗДЕСЬ НАДО ЛИСТ_КАР ПЕРЕДАВАТЬ, ПОТОМУ ЧТО ПРОСМОТР В ТЕКУЩЕЙ ПОЛОСЕ
 void checkCollisionAvoidance(ListCar* current)
 {
     // минимальная допустимая дистанция
