@@ -1,7 +1,21 @@
-// реализация с списками для 3-х полосной прямой дороги
+// реализация с списками для прямой дороги 1-5 полос в одну сторону
 
 #include "head_test.h"
 #include "head_list.h"
+
+
+ListCar *lane_1 = NULL;
+ListCar *lane_2 = NULL;
+ListCar *lane_3 = NULL;
+ListCar *lane_4 = NULL;
+ListCar *lane_5 = NULL;
+
+ListCar *lane_m1 = NULL;
+ListCar *lane_m2 = NULL;
+ListCar *lane_m3 = NULL;
+ListCar *lane_m4 = NULL;
+ListCar *lane_m5 = NULL;
+
 /*
 здесь чисто прямая дорога + нет аварий
 чисто для проверки динамического списка
@@ -585,7 +599,6 @@ void init()
 
 
 
-// ВОТ ТУТ УЖЕ ИЗМЕНЕНИЯ
 /* ПРЯМАЯ ДОРОГА */
 
 // отрисовка прямой дороги
@@ -741,48 +754,236 @@ void displayHighway()
     // отрисовка машин
     glColor3f(0.25f, 0.25f, 1.0f);
 
-
-    // struct ListCar *current = highway_car;
-    struct ListCar *current1 = lane_1;
-    while (current1 != NULL)
+    switch (lines_count)
     {
-        drawHighwayCar(current1->car);
-        current1 = current1->next;
+    case 1:
+    {
+        struct ListCar *current1 = lane_1;
+        while (current1 != NULL)
+        {
+            drawHighwayCar(current1->car);
+            current1 = current1->next;
+        }
+
+        struct ListCar *current4 = lane_m1;
+        while (current4 != NULL)
+        {
+            drawHighwayCar(current4->car);
+            current4 = current4->next;
+        }
     }
-
-    struct ListCar *current2 = lane_2;
-    while (current2 != NULL)
+    break;
+    case 2:
     {
-        drawHighwayCar(current2->car);
-        current2 = current2->next;
+        struct ListCar *current1 = lane_1;
+        while (current1 != NULL)
+        {
+            drawHighwayCar(current1->car);
+            current1 = current1->next;
+        }
+
+        struct ListCar *current2 = lane_2;
+        while (current2 != NULL)
+        {
+            drawHighwayCar(current2->car);
+            current2 = current2->next;
+        }
+
+        struct ListCar *current4 = lane_m1;
+        while (current4 != NULL)
+        {
+            drawHighwayCar(current4->car);
+            current4 = current4->next;
+        }
+
+        struct ListCar *current5 = lane_m2;
+        while (current5 != NULL)
+        {
+            drawHighwayCar(current5->car);
+            current5 = current5->next;
+        }
     }
-
-    struct ListCar *current3 = lane_3;
-    while (current3 != NULL)
+    break;
+    case 3:
     {
-        drawHighwayCar(current3->car);
-        current3 = current3->next;
+        struct ListCar *current1 = lane_1;
+        while (current1 != NULL)
+        {
+            drawHighwayCar(current1->car);
+            current1 = current1->next;
+        }
+
+        struct ListCar *current2 = lane_2;
+        while (current2 != NULL)
+        {
+            drawHighwayCar(current2->car);
+            current2 = current2->next;
+        }
+
+        struct ListCar *current3 = lane_3;
+        while (current3 != NULL)
+        {
+            drawHighwayCar(current3->car);
+            current3 = current3->next;
+        }
+
+        struct ListCar *current4 = lane_m1;
+        while (current4 != NULL)
+        {
+            drawHighwayCar(current4->car);
+            current4 = current4->next;
+        }
+
+        struct ListCar *current5 = lane_m2;
+        while (current5 != NULL)
+        {
+            drawHighwayCar(current5->car);
+            current5 = current5->next;
+        }
+
+        struct ListCar *current6 = lane_m3;
+        while (current6 != NULL)
+        {
+            drawHighwayCar(current6->car);
+            current6 = current6->next;
+        }
     }
-
-    struct ListCar *current4 = lane_m1;
-    while (current4 != NULL)
+    break;
+    case 4:
     {
-        drawHighwayCar(current4->car);
-        current4 = current4->next;
+        struct ListCar *current1 = lane_1;
+        while (current1 != NULL)
+        {
+            drawHighwayCar(current1->car);
+            current1 = current1->next;
+        }
+
+        struct ListCar *current2 = lane_2;
+        while (current2 != NULL)
+        {
+            drawHighwayCar(current2->car);
+            current2 = current2->next;
+        }
+
+        struct ListCar *current3 = lane_3;
+        while (current3 != NULL)
+        {
+            drawHighwayCar(current3->car);
+            current3 = current3->next;
+        }
+
+        struct ListCar *current3_1 = lane_4;
+        while (current3_1 != NULL)
+        {
+            drawHighwayCar(current3_1->car);
+            current3_1 = current3_1->next;
+        }
+
+        struct ListCar *current4 = lane_m1;
+        while (current4 != NULL)
+        {
+            drawHighwayCar(current4->car);
+            current4 = current4->next;
+        }
+
+        struct ListCar *current5 = lane_m2;
+        while (current5 != NULL)
+        {
+            drawHighwayCar(current5->car);
+            current5 = current5->next;
+        }
+
+        struct ListCar *current6 = lane_m3;
+        while (current6 != NULL)
+        {
+            drawHighwayCar(current6->car);
+            current6 = current6->next;
+        }
+
+        struct ListCar *current6_1 = lane_m4;
+        while (current6_1 != NULL)
+        {
+            drawHighwayCar(current6_1->car);
+            current6_1 = current6_1->next;
+        }
     }
-
-    struct ListCar *current5 = lane_m2;
-    while (current5 != NULL)
+    break;
+    case 5:
     {
-        drawHighwayCar(current5->car);
-        current5 = current5->next;
+        struct ListCar *current1 = lane_1;
+        while (current1 != NULL)
+        {
+            drawHighwayCar(current1->car);
+            current1 = current1->next;
+        }
+
+        struct ListCar *current2 = lane_2;
+        while (current2 != NULL)
+        {
+            drawHighwayCar(current2->car);
+            current2 = current2->next;
+        }
+
+        struct ListCar *current3 = lane_3;
+        while (current3 != NULL)
+        {
+            drawHighwayCar(current3->car);
+            current3 = current3->next;
+        }
+
+        struct ListCar *current3_1 = lane_4;
+        while (current3_1 != NULL)
+        {
+            drawHighwayCar(current3_1->car);
+            current3_1 = current3_1->next;
+        }
+
+        struct ListCar *current3_2 = lane_5;
+        while (current3_2 != NULL)
+        {
+            drawHighwayCar(current3_2->car);
+            current3_2 = current3_2->next;
+        }
+
+        struct ListCar *current4 = lane_m1;
+        while (current4 != NULL)
+        {
+            drawHighwayCar(current4->car);
+            current4 = current4->next;
+        }
+
+        struct ListCar *current5 = lane_m2;
+        while (current5 != NULL)
+        {
+            drawHighwayCar(current5->car);
+            current5 = current5->next;
+        }
+
+        struct ListCar *current6 = lane_m3;
+        while (current6 != NULL)
+        {
+            drawHighwayCar(current6->car);
+            current6 = current6->next;
+        }
+
+        struct ListCar *current6_1 = lane_m4;
+        while (current6_1 != NULL)
+        {
+            drawHighwayCar(current6_1->car);
+            current6_1 = current6_1->next;
+        }
+
+        struct ListCar *current6_2 = lane_m5;
+        while (current6_2 != NULL)
+        {
+            drawHighwayCar(current6_2->car);
+            current6_2 = current6_2->next;
+        }
     }
+    break;
 
-    struct ListCar *current6 = lane_m3;
-    while (current6 != NULL)
-    {
-        drawHighwayCar(current6->car);
-        current6 = current6->next;
+    default:
+        break;
     }
 
     glutSwapBuffers();
@@ -794,12 +995,65 @@ void updateHighway(int value)
     if (track)
     {
         addRandomCar();
-        updateAdvancedCars(lane_1);
-        updateAdvancedCars(lane_2);
-        updateAdvancedCars(lane_3);
-        updateAdvancedCars(lane_m1);
-        updateAdvancedCars(lane_m2);
-        updateAdvancedCars(lane_m3);
+
+        switch (lines_count)
+        {
+        case 1:
+        {
+            updateAdvancedCars(lane_1);
+            updateAdvancedCars(lane_m1);
+        }
+        break;
+        case 2:
+        {
+            updateAdvancedCars(lane_1);
+            updateAdvancedCars(lane_2);
+
+            updateAdvancedCars(lane_m1);
+            updateAdvancedCars(lane_m2);
+        }
+        break;
+        case 3:
+        {
+            updateAdvancedCars(lane_1);
+            updateAdvancedCars(lane_2);
+            updateAdvancedCars(lane_3);
+
+            updateAdvancedCars(lane_m1);
+            updateAdvancedCars(lane_m2);
+            updateAdvancedCars(lane_m3);
+        }
+        break;
+        case 4:
+        {
+            updateAdvancedCars(lane_1);
+            updateAdvancedCars(lane_2);
+            updateAdvancedCars(lane_3);
+            updateAdvancedCars(lane_4);
+
+            updateAdvancedCars(lane_m1);
+            updateAdvancedCars(lane_m2);
+            updateAdvancedCars(lane_m3);
+            updateAdvancedCars(lane_m4);
+        }
+        break;
+        case 5:
+        {
+            updateAdvancedCars(lane_1);
+            updateAdvancedCars(lane_2);
+            updateAdvancedCars(lane_3);
+            updateAdvancedCars(lane_4);
+            updateAdvancedCars(lane_5);
+
+            updateAdvancedCars(lane_m1);
+            updateAdvancedCars(lane_m2);
+            updateAdvancedCars(lane_m3);
+            updateAdvancedCars(lane_m4);
+            updateAdvancedCars(lane_m5);
+        }
+        break;
+        default: break;
+        }
     }
 
     glutPostRedisplay();
@@ -814,7 +1068,6 @@ void updateAdvancedCars(ListCar* head)
     struct ListCar *current = head;
     while (current != NULL)
     {
-// ТУТ ОБРАБОТКА ТОРМОЖЕНИЙ И ПЕРЕСТРОЕНИЙ - ФУНКЦИИ СООТВ
         checkCollisionAvoidance(current);
 
         current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
@@ -850,41 +1103,206 @@ void addRandomCar()
     last_add_time = current_time;
 
     // Добавляем машины на все доступные полосы
-    if (count_cars(lane_1) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(RIGHT, 1);
-        insert_car(&lane_1, new_car);
-    }
 
-    if (count_cars(lane_2) < MAX_LANE_CAR)
+    switch (lines_count)
     {
-        CarNode new_car = create_highway_car(RIGHT, 2);
-        insert_car(&lane_2, new_car);
-    }
+    case 1:
+    {
+        if (count_cars(lane_1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 1);
+            insert_car(&lane_1, new_car);
+        }
+        if (count_cars(lane_m1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 1);
+            insert_car(&lane_m1, new_car);
+        }
+    } 
+    break;
+    case 2:
+    {
+        if (count_cars(lane_1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 1);
+            insert_car(&lane_1, new_car);
+        }
 
-    if (count_cars(lane_3) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(RIGHT, 3);
-        insert_car(&lane_3, new_car);
-    }
+        if (count_cars(lane_2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 2);
+            insert_car(&lane_2, new_car);
+        }
 
-    if (count_cars(lane_m1) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 1);
-        insert_car(&lane_m1, new_car);
-    }
+        if (count_cars(lane_m1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 1);
+            insert_car(&lane_m1, new_car);
+        }
 
-    if (count_cars(lane_m2) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 2);
-        insert_car(&lane_m2, new_car);
+        if (count_cars(lane_m2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 2);
+            insert_car(&lane_m2, new_car);
+        }
     }
+    break;
+    case 3:
+    {
+        if (count_cars(lane_1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 1);
+            insert_car(&lane_1, new_car);
+        }
 
-    if (count_cars(lane_m3) < MAX_LANE_CAR)
-    {
-        CarNode new_car = create_highway_car(LEFT, 3);
-        insert_car(&lane_m3, new_car);
+        if (count_cars(lane_2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 2);
+            insert_car(&lane_2, new_car);
+        }
+
+        if (count_cars(lane_3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 3);
+            insert_car(&lane_3, new_car);
+        }
+
+        if (count_cars(lane_m1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 1);
+            insert_car(&lane_m1, new_car);
+        }
+
+        if (count_cars(lane_m2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 2);
+            insert_car(&lane_m2, new_car);
+        }
+
+        if (count_cars(lane_m3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 3);
+            insert_car(&lane_m3, new_car);
+        }
     }
+    break;
+    case 4:
+    {
+        if (count_cars(lane_1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 1);
+            insert_car(&lane_1, new_car);
+        }
+
+        if (count_cars(lane_2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 2);
+            insert_car(&lane_2, new_car);
+        }
+
+        if (count_cars(lane_3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 3);
+            insert_car(&lane_3, new_car);
+        }
+
+        if (count_cars(lane_4) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 4);
+            insert_car(&lane_4, new_car);
+        }
+
+        if (count_cars(lane_m1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 1);
+            insert_car(&lane_m1, new_car);
+        }
+
+        if (count_cars(lane_m2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 2);
+            insert_car(&lane_m2, new_car);
+        }
+
+        if (count_cars(lane_m3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 3);
+            insert_car(&lane_m3, new_car);
+        }
+
+        if (count_cars(lane_m4) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 4);
+            insert_car(&lane_m4, new_car);
+        }
+    }
+    break;
+    case 5:
+    {
+        if (count_cars(lane_1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 1);
+            insert_car(&lane_1, new_car);
+        }
+
+        if (count_cars(lane_2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 2);
+            insert_car(&lane_2, new_car);
+        }
+
+        if (count_cars(lane_3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 3);
+            insert_car(&lane_3, new_car);
+        }
+
+        if (count_cars(lane_4) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 4);
+            insert_car(&lane_4, new_car);
+        }
+
+        if (count_cars(lane_5) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(RIGHT, 5);
+            insert_car(&lane_5, new_car);
+        }
+
+        if (count_cars(lane_m1) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 1);
+            insert_car(&lane_m1, new_car);
+        }
+
+        if (count_cars(lane_m2) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 2);
+            insert_car(&lane_m2, new_car);
+        }
+
+        if (count_cars(lane_m3) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 3);
+            insert_car(&lane_m3, new_car);
+        }
+
+        if (count_cars(lane_m4) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 4);
+            insert_car(&lane_m4, new_car);
+        }
+
+        if (count_cars(lane_m5) < MAX_LANE_CAR)
+        {
+            CarNode new_car = create_highway_car(LEFT, 5);
+            insert_car(&lane_m5, new_car);
+        }
+    }
+    break;
+    default: break;
+    }
+    
 }
 
 CarNode create_highway_car(CarDirection direction, char lane)
@@ -911,8 +1329,6 @@ CarNode create_highway_car(CarDirection direction, char lane)
         car.position = WINDOW_BORDER + 1 + (rand() % 10);
         // car.lane = -car.lane;
     }
-
-
 
     return car;
 }
