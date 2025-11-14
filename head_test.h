@@ -14,13 +14,13 @@
 #define MAX_LANES 10  // Максимум 5 полос в каждую сторону
 
 //#define MIN_SPEED 0.05f
-#define MIN_SPEED 0.2f
+#define MIN_SPEED 0.1f
 // #define MAX_SPEED 0.1f
-#define MAX_SPEED 0.25f
+#define MAX_SPEED 0.2f
 #define TURN_SPEED 0.15f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
-#define SAFE_DISTANCE 4.0
+#define SAFE_DISTANCE 3.0
 
 #define MAX_CARS 15
 #define MAX_LANE_CAR 2

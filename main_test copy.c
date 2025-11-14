@@ -7,8 +7,6 @@
 
 int car_count = 0; // текущее количество машин, которые инициализированы
 
-
-
 int main(int argc, char **argv)
 {
     srand(time(NULL));
@@ -45,15 +43,15 @@ void processMouseClick(int button, int state, int x, int y)
             // кнопки на главном меню
             if (menu_option == MAIN_MENU)
             {
-                if (glX >= -0.5f && glX <= 0.0f)
+                if (glX >= -0.7f && glX <= -0.2f)
                 {
                     // окно с информацией
-                    if (glY >= 0.4f && glY <= 0.5f)
+                    if (glY >= 0.25f && glY <= 0.37f)
                     {
                         menu_option = APP_INFO;
                     }
                     // моделирование автострады
-                    else if (glY >= 0.25f && glY <= 0.35f)
+                    else if (glY >= 0.0f && glY <= 0.12f)
                     {
                         start_time = clock();
                         init();
@@ -65,7 +63,7 @@ void processMouseClick(int button, int state, int x, int y)
                         return;
                     }
                     // моделирование перекрестка
-                    else if (glY >= 0.1f && glY <= 0.2)
+                    else if (glY >= -0.15f && glY <= -0.03)
                     {
                         start_time = clock();
                         init();
@@ -77,42 +75,42 @@ void processMouseClick(int button, int state, int x, int y)
                         return;
                     }
                     // окно с информацией
-                    else if (glY >= -0.2f && glY <= -0.1f)
+                    else if (glY >= -0.4f && glY <= -0.28f)
                     {
                         menu_option = ABOUT_US;
                     }
                 }
                 // кнопки выбора количества полос
-                else if (glY >= 0.1f && glY <= 0.2f)
+                else if (glY >= -0.06f && glY <= 0.06f)
                 {
-                    if (glX >= 0.15f && glX <= 0.25f)
+                    if (glX >= 0.1 + (1-1) * 0.15 && glX <= 0.2 + (1-1) * 0.15f)
                     {
                         lines_count = 1;
                         intersection_size = 1.0f;
                     }
-                    else if (glX >= 0.3f && glX <= 0.4f)
+                    else if (glX >= 0.1 + (2-1) * 0.15 && glX <= 0.2 + (2-1) * 0.15f)
                     {
                         lines_count = 2;
                         intersection_size = 2.0f;
                     }
-                    else if (glX >= 0.45f && glX <= 0.55f)
+                    else if (glX >= 0.1 + (3-1) * 0.15 && glX <= 0.2 + (3-1) * 0.15f)
                     {
                         lines_count = 3;
                         intersection_size = 3.0f;
                     }
-                    else if (glX >= 0.6f && glX <= 0.7f)
+                    else if (glX >= 0.1 + (4-1) * 0.15 && glX <= 0.2 + (4-1) * 0.15f)
                     {
                         lines_count = 4;
                         intersection_size = 4.0f;
                     }
-                    else if (glX >= 0.75f && glX <= 0.85f)
+                    else if (glX >= 0.1 + (5-1) * 0.15 && glX <= 0.2 + (5-1) * 0.15f)
                     {
                         lines_count = 5;
                         intersection_size = 5.0f;
                     }
                 }
                 // кнопка загрузки из файла
-                else if (glX >= 0.15f && glX <= 0.65 && glY >= -0.2f && glY <= -0.1f)
+                else if (glX >= 0.2f && glX <= 0.7 && glY >= -0.4f && glY <= -0.28f)
                 {
                     menu_option = LOAD_FROM_FILE;
                 }
@@ -148,19 +146,19 @@ void processMouseMove(int x, int y)
         if (menu_option == MAIN_MENU)
         {
             // кнопки изменеия окна
-            if (glX >= -0.5f && glX <= 0.0f)
+            if (glX >= -0.7f && glX <= -0.2f)
             {
-                if (glY >= 0.4f && glY <= 0.5f)
+                if (glY >= 0.25f && glY <= 0.37f)
                     button_hover = 1;
-                else if (glY >= 0.25f && glY <= 0.35f)
+                else if (glY >= 0.0f && glY <= 0.12f)
                     button_hover = 2;
-                else if (glY >= 0.1f && glY <= 0.2)
+                else if (glY >= -0.15f && glY <= -0.03)
                     button_hover = 3;
-                else if (glY >= -0.2f && glY <= -0.1f)
+                else if (glY >= -0.4f && glY <= -0.28f)
                     button_hover = 4;
             }
             // кнопка загрузки моделирования
-            if (glX >= 0.15f && glX <= 0.65 && glY >= -0.2f && glY <= -0.1f)
+            if (glX >= 0.2f && glX <= 0.7 && glY >= -0.4f && glY <= -0.28f)
                 button_hover = 8;
         }
         // кнопка возврата на главное меню
@@ -186,7 +184,7 @@ void menuWindow()
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Фон меню
-    glColor3f(0.80f, 0.80f, 1.0f);
+    glColor3f(244.0f / 255.0f, 235.0f / 255.0f, 255.0f / 255.0f);
     glBegin(GL_QUADS);
     glVertex2f(-1.0f, 1.0f);
     glVertex2f(-1.0f, -1.0f);
@@ -199,16 +197,15 @@ void menuWindow()
     glColor3f(0.0f, 0.0f, 0.0f);
     glRasterPos2f(-0.15f, 0.65f);
     for (int i = 0; i < strlen(str); i++)
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, str[i]);
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, str[i]);
 
     glColor3f(0.0f, 0.0f, 0.0f);
 
     // Выбор количества полос
-    // drawText(0.2f, 0.3f, "Select number of lanes:");
-    drawText(0.2f, 0.3f, "Choose lanes count:");
+    drawText(0.1f, 0.2f, "Choose lanes count:");
 
     char *str3 = "(per direction. default - 3)";
-    glRasterPos2f(0.2f, 0.25f);
+    glRasterPos2f(0.1f, 0.15f);
     for (int i = 0; i < strlen(str3); i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, str3[i]);
 
@@ -218,17 +215,17 @@ void menuWindow()
         char label[10];
         sprintf(label, "%d", i);
         bool active = (lines_count == i);
-        drawButtonNumber(0.15f + (i - 1) * 0.15f, 0.1f, 0.1f, 0.1f, label, active);
+        drawButtonNumber(0.1f + (i - 1) * 0.15f, -0.06f, 0.1f, 0.12f, label, active);
     }
 
     // кнопки в главном меню
     if (menu_option == MAIN_MENU)
     {
-        drawButton(-0.5f, 0.4f, 0.5f, 0.1f, "app info", button_hover == 1);
-        drawButton(-0.5f, 0.25f, 0.5f, 0.1f, "highway", button_hover == 2);
-        drawButton(-0.5f, 0.1f, 0.5f, 0.1f, "crossroad", button_hover == 3);
-        drawButton(-0.5f, -0.2f, 0.5f, 0.1f, "about us", button_hover == 4);
-        drawButton(0.15f, -0.2f, 0.5f, 0.1f, "load from file", button_hover == 8);
+        drawButton(-0.7f, 0.25f, 0.5f, 0.12f, "app info", button_hover == 1);
+        drawButton(-0.7f, 0.0f, 0.5f, 0.12f, "highway", button_hover == 2);
+        drawButton(-0.7f, -0.15f, 0.5f, 0.12f, "crossroad", button_hover == 3);
+        drawButton(-0.7f, -0.40f, 0.5f, 0.12f, "about us", button_hover == 4);
+        drawButton(0.2f, -0.40f, 0.5f, 0.12f, "load from file", button_hover == 8);
     }
     else if (menu_option == APP_INFO)
     {
@@ -250,14 +247,8 @@ void menuWindow()
 void drawButton(float x, float y, float width, float height, const char *text, int hover)
 {
     // определяем наведение мыши на кнопку
-    if (hover)
-    {
-        glColor3f(0.80f, 0.54f, 0.80f);
-    }
-    else
-    {
-        glColor3f(0.92f, 0.76f, 0.92f);
-    }
+    if (hover) glColor3f(186.0f / 255.0f, 123.0f / 255.0f, 186.0f / 255.0f);
+    else glColor3f(227.0f / 255.0f, 177.0f / 255.0f, 227.0f / 255.0f);
 
     // сама кнопка
     glBegin(GL_QUADS);
@@ -279,7 +270,12 @@ void drawButton(float x, float y, float width, float height, const char *text, i
 
     // текст внутри кнопки
     glColor3f(0.0f, 0.0f, 0.0f);
-    glRasterPos2f(x + width / 2 - 0.05f, y + height / 2 - 0.03f);
+    // Центрирование текста
+    float text_width = glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char*)text) / 450.0f;
+    float text_x = x + (width - text_width) / 2.0f;
+    float text_y = y + height / 2.0f - 0.02f;
+    glRasterPos2f(text_x, text_y);
+    //glRasterPos2f(x + width / 2 - 0.05f, y + height / 2 - 0.03f);
     for (int i = 0; i < strlen(text); i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
 }
@@ -288,14 +284,8 @@ void drawButton(float x, float y, float width, float height, const char *text, i
 void drawButtonNumber(float x, float y, float width, float height, const char *label, bool active)
 {
     // определяем нажатие на кнопку
-    if (active)
-    {
-        glColor3f(0.42f, 0.58f, 0.85f);
-    }
-    else
-    {
-        glColor3f(0.64f, 0.76f, 0.94f);
-    }
+    if (active) glColor3f(0.55f, 0.615f, 0.886f);
+    else glColor3f(0.74f, 0.8f, 1.0f);
 
     // сама кнопка
     glBegin(GL_QUADS);
@@ -316,9 +306,8 @@ void drawButtonNumber(float x, float y, float width, float height, const char *l
     glEnd();
 
     // число полос
-    glColor3f(0.25f, 0.25f, 0.25f);
-    float textX = x + 0.1 + (width - glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char *)label)) / 200.0f;
-    float textY = y + height / 2.0f - 0.1f;
+    float textX = x + width / 2.0f - glutBitmapLength(GLUT_BITMAP_HELVETICA_18, (const unsigned char *)label) / 900.0f;
+    float textY = y - 0.05f;
     drawText(textX, textY, label);
 }
 
@@ -566,9 +555,7 @@ void init()
 void initCrossroadCar()
 {
     for (int i = 0; i < MAX_CARS; i++)
-    {
         addCrossroadCar();
-    }
 }
 
 // инициализация машин на автостраде
@@ -578,14 +565,11 @@ void initHighwayCar()
     init_lanes(lines_count);
 
     for (int i = 0; i < 4; i++)
-    {
         addRandomCar();
-    }
 }
 
 /* ПРЯМАЯ ДОРОГА */
 
-//-----------------------------------------------------------------
 // Реализация массива полос
 ListCar *lanes[MAX_LANES] = {NULL};
 int lane_count = 6; // По умолчанию 3 полосы в каждую сторону
@@ -600,9 +584,7 @@ void init_lanes(int lanes_per_direction)
 
     // Инициализируем все указатели в NULL
     for (int i = 0; i < MAX_LANES; i++)
-    {
         lanes[i] = NULL;
-    }
 }
 
 // Освобождение памяти всех полос
@@ -625,36 +607,9 @@ void free_all_lanes(void)
 int get_lane_index(CarDirection direction, char lane_number)
 {
     if (direction == RIGHT)
-    {
         return lane_number - 1; // Правые полосы: 0, 1, 2...
-    }
     else
-    {
         return (lane_count / 2) + (lane_number - 1); // Левые полосы
-    }
-}
-
-// Получение указателя на список полосы
-ListCar *get_lane(CarDirection direction, char lane_number)
-{
-    int index = get_lane_index(direction, lane_number);
-    if (index >= 0 && index < lane_count)
-    {
-        return lanes[index];
-    }
-    return NULL;
-}
-
-// Применение функции ко всем полосам
-void for_each_lane(void (*func)(ListCar *))
-{
-    for (int i = 0; i < lane_count; i++)
-    {
-        if (lanes[i] != NULL)
-        {
-            func(lanes[i]);
-        }
-    }
 }
 
 // Обновление всех машин
@@ -663,9 +618,7 @@ void update_all_cars(void)
     for (int i = 0; i < lane_count; i++)
     {
         if (lanes[i] != NULL)
-        {
-            updateAdvancedCars(lanes[i]);
-        }
+            updateAdvancedCars(&lanes[i]);
     }
 }
 
@@ -695,30 +648,28 @@ int count_cars(ListCar *head)
     return count;
 }
 
+// создает и инициализирует новую машину для автострады
 CarNode create_highway_car(CarDirection direction, char lane)
 {
-    CarNode car = {0}; // memset 0
+    CarNode car = {0};
 
     car.direction = direction;
     car.lane = lane;
 
     car.is_braking = false;
-    car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
-    car.speed = car.max_speed * 0.5;
+    // car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
+    // car.speed = car.max_speed * 0.5;
+    car.max_speed = MAX_SPEED;
+    car.speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
 
     car.color[0] = (50 + rand() % 50) / 100.0f; // R: 0.5-1.0 (исключает 0.0)
     car.color[1] = (rand() % 100) / 100.0f;     // G: 0.0-1.0
     car.color[2] = (rand() % 100) / 100.0f;     // B: 0.0-1.0
 
     if (car.direction == RIGHT)
-    {
         car.position = -WINDOW_BORDER - 1 - (rand() % 10);
-    }
     else
-    {
         car.position = WINDOW_BORDER + 1 + (rand() % 10);
-        // car.lane = -car.lane;
-    }
 
     return car;
 }
@@ -744,16 +695,13 @@ void insert_car(ListCar **head, CarNode car)
         return;
 
     if (*head == NULL)
-    {
         *head = new;
-    }
     else
     {
         ListCar *current = *head;
         while (current->next != NULL)
-        {
             current = current->next;
-        }
+
         current->next = new;
     }
 }
@@ -812,38 +760,32 @@ void drawHighwayCar(CarNode car)
     glPushMatrix();
 
     // позиция машины на полосе
-    // float lane_pos = car.lane * LINE_WIDTH;
-
     float lane_pos;
-    if (car.direction == RIGHT)
-    {
-        // Для движения направо - полосы сверху вниз: 1, 2, 3...
-        lane_pos = (lines_count - car.lane + 1.0) * LINE_WIDTH;
-    }
-    else
-    {
-        // Для движения налево - полосы снизу вверх: -1, -2, -3...
-        lane_pos = (-lines_count + car.lane - 1.0) * LINE_WIDTH;
-    }
+    if (car.direction == RIGHT) lane_pos = -car.lane * LINE_WIDTH;
+    else lane_pos = car.lane * LINE_WIDTH;
 
     // установка положения машины
     glTranslatef(car.position, lane_pos, 0);
 
     // поворот рисовки, если движение влево
-    if (car.direction == LEFT)
-    {
+    if (car.direction == RIGHT)
         glRotatef(180, 0, 1, 0);
-    }
 
     // свет при торможении
     if (car.is_braking)
     {
         glColor3f(1.0, 0.0, 0.0);
         glBegin(GL_LINES);
-        glVertex2f(-0.8, -0.4);
-        glVertex2f(-0.8, -0.5);
-        glVertex2f(-0.7, -0.4);
-        glVertex2f(-0.7, -0.5);
+        glVertex2f(0.7, 0.15);
+        glVertex2f(0.7, 0.3);
+        glVertex2f(0.72, 0.15);
+        glVertex2f(0.72, 0.3);
+        glEnd();
+        glBegin(GL_LINES);
+        glVertex2f(0.7, -0.3);
+        glVertex2f(0.7, -0.15);
+        glVertex2f(0.72, -0.3);
+        glVertex2f(0.72, -0.15);
         glEnd();
     }
 
@@ -959,15 +901,11 @@ void checkCollisionAvoidance(ListCar *current)
 
             // Плавное торможение до безопасной скорости
             if (current->car.speed > safe_speed)
-            {
                 current->car.speed = fmax(safe_speed, current->car.speed * BRAKING_FACTOR);
-            }
 
             // Если очень близко - экстренное торможение
             if (path_distance < SAFE_DISTANCE * 0.7)
-            {
                 current->car.speed *= 0.8;
-            }
         }
     }
 
@@ -980,7 +918,7 @@ void checkCollisionAvoidance(ListCar *current)
 }
 
 // обновляем рисовку машинок на автостраде
-void updateAdvancedCars(ListCar *head)
+/*void updateAdvancedCars(ListCar *head)
 {
     if (!track)
         return;
@@ -997,20 +935,69 @@ void updateAdvancedCars(ListCar *head)
             (current->car.direction == LEFT && current->car.position < -WINDOW_BORDER))
         {
             if (current->car.direction == RIGHT)
-            {
                 current->car.position = -WINDOW_BORDER - 1;
-            }
             else
-            {
                 current->car.position = WINDOW_BORDER + 1;
-            }
 
             current->car.speed = current->car.max_speed * 0.7;
         }
 
         current = current->next;
     }
+}*/
+
+// обновляем рисовку машинок на автостраде
+// Теперь принимает адрес указателя на голову списка (ListCar **)
+void updateAdvancedCars(ListCar **head)
+{
+    if (!track)
+        return;
+
+    ListCar *current = *head;
+    ListCar *prev = NULL;
+
+    while (current != NULL)
+    {
+        // ТУТ ОБРАБОТКА ТОРМОЖЕНИЙ И ПЕРЕСТРОЕНИЙ - ФУНКЦИИ СООТВ
+        checkCollisionAvoidance(current);
+
+        // Движение
+        current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
+
+        // Проверка на выезд за пределы (УДАЛЕНИЕ вместо телепортации)
+        bool should_delete = false;
+        // Проверяем, вышла ли машина за пределы окна (с небольшим запасом)
+        if ((current->car.direction == RIGHT && current->car.position > WINDOW_BORDER + 2) ||
+            (current->car.direction == LEFT && current->car.position < -WINDOW_BORDER - 2))
+        {
+            should_delete = true;
+        }
+
+        if (should_delete)
+        {
+            ListCar *next = current->next;
+            if (prev == NULL)
+            {
+                // Удаление головы списка
+                *head = next;
+            }
+            else
+            {
+                // Удаление элемента из середины/конца
+                prev->next = next;
+            }
+            free(current);
+            current = next; // Переходим к следующему элементу
+        }
+        else
+        {
+            // Если не удаляем, двигаем указатели
+            prev = current;
+            current = current->next;
+        }
+    }
 }
+
 
 // добавление новой машинки на автостраду
 void addRandomCar()
@@ -1310,10 +1297,10 @@ void drawCrossroadCar(AdvancedCar2 car)
         display_angle = car.current_display_angle; // Используем угол, рассчитанный в executeTurn
     } else {
         // Стандартные углы для прямолинейного движения
-        if (car.direction_x == -1) display_angle = 180;
-        else if (car.direction_y == 1) display_angle = 90;
-        else if (car.direction_y == -1) display_angle = 270;
-        else display_angle = 0; // По умолчанию для direction_x = 1
+        if (car.direction_x == -1) display_angle = 0;
+        else if (car.direction_y == 1) display_angle = 270;
+        else if (car.direction_y == -1) display_angle = 90;
+        else display_angle = 180;
     }
     glRotatef(display_angle, 0, 0, 1);
 
@@ -1605,9 +1592,9 @@ void executeTurn(AdvancedCar2 *car)
     }
     // Перевод в градусы (для разных х, чтобы машины не поворачивали задом)
     if (car->x < 0)
-        car->current_display_angle = car->current_display_angle * 180.0f / M_PI;
+        car->current_display_angle = car->current_display_angle * 180.0f / M_PI + 180.0f;
     else
-        car->current_display_angle = current_angle * 180.0f / M_PI + 90.0f;
+        car->current_display_angle = current_angle * 180.0f / M_PI - 90.0f;
 
 
     // Завершение поворота

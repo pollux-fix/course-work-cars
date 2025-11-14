@@ -47,7 +47,7 @@ ListCar* get_lane(CarDirection direction, char lane_number);
 //------------------------------------------------------
 
 void drawHighwayCar(CarNode car);
-void updateAdvancedCars(ListCar *head);
+void updateAdvancedCars(ListCar **head);
 float calculateSafeSpeed(CarNode car, float distance);
 void checkCollisionAvoidance(ListCar *current);
 
