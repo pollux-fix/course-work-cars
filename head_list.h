@@ -21,10 +21,16 @@ typedef struct
     float position;
 
     bool is_braking;
-    // float target_speed; // скорость после торможения
-    // char target_lane; // для перестроения
-    // float lane_change_progress;
-    // bool is_changing_lane;
+
+    // Новые поля для перестроения
+    bool is_changing_lane;
+    char target_lane;
+    float lane_change_progress;
+    float target_speed;
+
+    // Для аварий
+    int state;
+    float fixed_position;
 
 } CarNode;
 
@@ -48,6 +54,7 @@ ListCar* get_lane(CarDirection direction, char lane_number);
 
 void drawHighwayCar(CarNode car);
 void updateAdvancedCars(ListCar **head);
+// void updateAdvancedCars(ListCar *head);
 float calculateSafeSpeed(CarNode car, float distance);
 void checkCollisionAvoidance(ListCar *current);
 
@@ -63,3 +70,10 @@ void for_each_lane(void (*func)(ListCar*));
 void update_all_cars(void);
 void draw_all_cars(void);
 //------------------------------------------------------
+
+void decideLaneChange(ListCar *current_car);
+bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed);
+
+void remove_cars_out_of_bounds();
+void move_car_to_new_lane(int old_lane_index, int new_lane_index, ListCar *car_node);
+void remove_car_from_lane(int lane_index, ListCar *car_to_remove);
