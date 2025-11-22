@@ -421,6 +421,7 @@ void processNormalKeys(unsigned char key, int x, int y)
         track = !track;
         printf("write <filename>.txt to save:\n");
         char file[100];
+        
         if (!fgets(file, 100, stdin))
         {
             printf("ERROR\n");
@@ -504,7 +505,7 @@ void infoStatistic(bool flag)
     }
 
     glRasterPos2f(-WINDOW_BORDER + 1, WINDOW_BORDER - 4);
-    char type[3][25] = {" Highway", " Crossroad", " 2 Crossroads"};
+    char type[2][25] = {" Highway", " Crossroad"};
     switch (type_simulation)
     {
     case (HIGHWAY):
@@ -849,6 +850,8 @@ void displayHighway()
 
     // Используем новую универсальную функцию
     draw_all_cars();
+
+    infoStatistic(false);
 
     glutSwapBuffers();
 }
@@ -2258,89 +2261,6 @@ void checkCollisionsCrossroad(AdvancedCar2 *car)
     car->just_have_turn = false;
 }
 
-// решение о смене полосы
-void decideChangeCrossroad(AdvancedCar2 *car)
-{
-    if (car->is_changing_lane)
-        return;
-    if (car->is_braking)
-        return;
-
-    // Не перестраиваемся на перекрестке
-    if (car->in_intersection)
-        return;
-    if (car->is_turning)
-        return;
-
-    bool slow_car_ahead = false;
-    float min_distance = SAFE_DISTANCE * 3;
-
-    for (int i = 0; i < car_count; i++)
-    {
-        if (&cars[i] == car)
-            continue;
-        if (cars[i].road_id != car->road_id)
-            continue;
-        if (cars[i].lane != car->lane)
-            continue;
-
-        float dist;
-        if (car->road_id == 0)
-        {
-            dist = fabs(cars[i].x - car->x);
-        }
-        else
-        {
-            dist = fabs(cars[i].y - car->y);
-        }
-
-        bool is_in_front;
-        if (car->road_id == 0)
-        {
-            is_in_front = (car->direction_x == 1 && cars[i].x > car->x) ||
-                          (car->direction_x == -1 && cars[i].x < car->x);
-        }
-        else
-        {
-            is_in_front = (car->direction_y == 1 && cars[i].y > car->y) ||
-                          (car->direction_y == -1 && cars[i].y < car->y);
-        }
-
-        if (is_in_front && dist < min_distance)
-        {
-            min_distance = dist;
-
-            if (dist < SAFE_DISTANCE * 2 && cars[i].speed < car->max_speed * 0.8)
-            {
-                slow_car_ahead = true;
-            }
-        }
-    }
-
-    if (!slow_car_ahead)
-        return;
-
-    for (int dl = -1; dl <= 1; dl += 2)
-    {
-        int new_lane = car->lane + dl;
-
-        // Не перестраиваемся на центральную линию - островок безопасности
-        if (new_lane == 0)
-            continue;
-        if (abs(new_lane) > lines_count)
-            continue;
-
-        float safe_speed;
-        if (isSafeToChangeCrossroad(car, new_lane, &safe_speed))
-        {
-            car->target_lane = new_lane;
-            car->is_changing_lane = true;
-            car->lane_change_progress = 0.0;
-            car->target_speed = safe_speed;
-            return;
-        }
-    }
-}
 
 // обновление светофора
 void updateTrafficLight()
@@ -2385,32 +2305,10 @@ void updateCars()
         }
 
         // Решение о перестроении
-        if (!cars[i].is_changing_lane && rand() % 100 < 20)
-        {
-            decideChangeCrossroad(&cars[i]);
-        }
-
-        // Обработка перестроения
-        if (cars[i].is_changing_lane && !cars[i].is_turning)
-        {
-            if (cars[i].speed > cars[i].target_speed)
-            {
-                cars[i].speed = fmax(cars[i].target_speed, cars[i].speed * BRAKING_FACTOR);
-                cars[i].is_braking = true;
-            }
-
-            if (cars[i].speed <= cars[i].target_speed * 1.1)
-            {
-                cars[i].lane_change_progress += LANE_CHANGE_SPEED;
-
-                if (cars[i].lane_change_progress >= 1.0)
-                {
-                    cars[i].lane = cars[i].target_lane;
-                    cars[i].is_changing_lane = false;
-                    cars[i].target_lane = -1;
-                }
-            }
-        }
+        // if (!cars[i].is_changing_lane && rand() % 100 < 20)
+        // {
+        //     decideChangeCrossroad(&cars[i]);
+        // }
 
         // Обычное движение
         if (!cars[i].is_turning)
@@ -2531,9 +2429,7 @@ void addCrossroadCar()
     }
 
     new_car.lane = lane;
-    new_car.target_lane = -1;
-    new_car.lane_change_progress = 0.0;
-    new_car.is_changing_lane = false;
+
     new_car.is_braking = false;
     new_car.in_intersection = false;
     new_car.has_priority = true;
@@ -2599,6 +2495,342 @@ void timerCrossroad(int value)
 
 /*  РАБОТА С ФАЙЛАМИ */
 
+
+// // сохранение моделирования
+// void saveSimulation(const char *filename)
+// {
+//     FILE *file = fopen(filename, "w");
+//     if (!file)
+//     {
+//         printf("ERROR: Could not open file %s for writing\n", filename);
+//         return;
+//     }
+
+//     // Сохраняем тип дороги и количество полос
+//     fprintf(file, "RoadType: %d\n", type_simulation);
+//     fprintf(file, "Lanes: %d\n", lines_count);
+//     fprintf(file, "CarsCount: %d\n", car_count);
+//     fprintf(file, "Cars:\n");
+
+//     for (int i = 0; i < car_count; i++)
+//     {
+//         fprintf(file, "Car %d:\n", i);
+
+//         if (type_simulation == HIGHWAY)
+//         {
+//             printf("come later \n");
+
+//             // Сохраняем параметры AdvancedCar для автострады
+
+//             /*
+//             fprintf(file, "  Type: AdvancedCar\n");
+//             fprintf(file, "  Position: %.2f\n", advanced_cars[i].position);
+//             fprintf(file, "  Speed: %.2f\n", advanced_cars[i].speed);
+//             fprintf(file, "  MaxSpeed: %.2f\n", advanced_cars[i].max_speed);
+//             fprintf(file, "  Lane: %d\n", advanced_cars[i].lane);
+//             fprintf(file, "  TargetLane: %d\n", advanced_cars[i].target_lane);
+//             fprintf(file, "  LaneChangeProgress: %.2f\n", advanced_cars[i].lane_change_progress);
+//             fprintf(file, "  Direction: %d\n", advanced_cars[i].direction);
+//             fprintf(file, "  Color: %.2f %.2f %.2f\n",
+//                     advanced_cars[i].color[0],
+//                     advanced_cars[i].color[1],
+//                     advanced_cars[i].color[2]);
+//             fprintf(file, "  IsChangingLane: %d\n", advanced_cars[i].is_changing_lane);
+//             fprintf(file, "  IsBraking: %d\n", advanced_cars[i].is_braking);
+//             fprintf(file, "  TargetSpeed: %.2f\n", advanced_cars[i].target_speed);
+//             */
+//         }
+//         else
+//         {
+//             // Сохраняем параметры AdvancedCar2 для перекрестка
+//             fprintf(file, "  Type: AdvancedCar2\n");
+//             fprintf(file, "  Position: %.2f %.2f\n", cars[i].x, cars[i].y);
+//             fprintf(file, "  Speed: %.2f\n", cars[i].speed);
+//             fprintf(file, "  MaxSpeed: %.2f\n", cars[i].max_speed);
+//             fprintf(file, "  Lane: %d\n", cars[i].lane);
+//             fprintf(file, "  TargetLane: %d\n", cars[i].target_lane);
+//             fprintf(file, "  LaneChangeProgress: %.2f\n", cars[i].lane_change_progress);
+//             fprintf(file, "  Direction: %d %d\n", cars[i].direction_x, cars[i].direction_y);
+//             fprintf(file, "  Color: %.2f %.2f %.2f\n",
+//                     cars[i].color[0], cars[i].color[1], cars[i].color[2]);
+//             fprintf(file, "  IsChangingLane: %d\n", cars[i].is_changing_lane);
+//             fprintf(file, "  IsBraking: %d\n", cars[i].is_braking);
+//             fprintf(file, "  TargetSpeed: %.2f\n", cars[i].target_speed);
+//             fprintf(file, "  InIntersection: %d\n", cars[i].in_intersection);
+//             fprintf(file, "  HasPriority: %d\n", cars[i].has_priority);
+//             fprintf(file, "  IsTurning: %d\n", cars[i].is_turning);
+//             fprintf(file, "  TurnDirection: %d\n", cars[i].turn_direction);
+//             fprintf(file, "  TurnProgress: %.2f\n", cars[i].turn_progress);
+//             fprintf(file, "  RoadID: %d\n", cars[i].road_id);
+//             fprintf(file, "  WillTurn: %d\n", cars[i].will_turn);
+//             fprintf(file, "  PlannedTurn: %d\n", cars[i].planned_turn);
+//             fprintf(file, "  JustHaveTurn: %d\n", cars[i].just_have_turn);
+//         }
+//         fprintf(file, "\n");
+//     }
+
+//     fclose(file);
+//     printf("Simulation saved to %s\n", filename);
+//     printf("For continue, press TAB in simulation window\n");
+// }
+
+// // загрузка моделирования
+// void loadSimulation(const char *filename)
+// {
+//     FILE *file = fopen(filename, "r");
+//     if (!file)
+//     {
+//         printf("ERROR: Could not open file %s\n", filename);
+//         return;
+//     }
+
+//     char line[256];
+//     int current_car = -1;
+//     bool car_type = false; // 0 - AdvancedCar, 1 - AdvancedCar2
+
+//     // Сброс текущего состояния
+//     car_count = 0;
+//     type_simulation = MENU;
+
+//     while (fgets(line, sizeof(line), file))
+//     {
+//         // Удаляем символ новой строки
+//         line[strcspn(line, "\n")] = 0;
+
+//         // Пропускаем пустые строки
+//         if (strlen(line) == 0)
+//             continue;
+
+//         // основные параметры
+//         if (strstr(line, "RoadType:") != NULL)
+//         {
+//             sscanf(line, "RoadType: %d", &type_simulation);
+//         }
+//         else if (strstr(line, "Lanes:") != NULL)
+//         {
+//             sscanf(line, "Lanes: %d", &lines_count);
+//             if (type_simulation == CROSSROAD)
+//             {
+//                 if (lines_count == 1)
+//                     intersection_size = 1.0f;
+//                 else if (lines_count == 2)
+//                     intersection_size = 2.0f;
+//                 else if (lines_count == 3)
+//                     intersection_size = 3.0f;
+//                 else if (lines_count == 4)
+//                     intersection_size = 4.0f;
+//                 else if (lines_count == 5)
+//                     intersection_size = 5.0f;
+//             }
+//         }
+//         else if (strstr(line, "CarsCount:") != NULL)
+//         {
+//             sscanf(line, "CarsCount: %d", &car_count);
+//         }
+//         // Обработка данных машин
+//         else if (strstr(line, "Car ") != NULL)
+//         {
+//             sscanf(line, "Car %d:", &current_car);
+//         }
+//         else if (strstr(line, "Type:") != NULL)
+//         {
+//             char type[20];
+//             sscanf(line, "  Type: %s", type);
+//             car_type = (strcmp(type, "AdvancedCar") == 0) ? false : true;
+//         }
+//         // Загрузка AdvancedCar
+//         else if (!car_type && current_car >= 0)
+//         {
+//             printf("come later \n");
+//             /*
+//             if (strstr(line, "Position:") != NULL)
+//             {
+//                 sscanf(line, "  Position: %f", &advanced_cars[current_car].position);
+//             }
+//             else if (strstr(line, "Speed:") != NULL)
+//             {
+//                 sscanf(line, "  Speed: %f", &advanced_cars[current_car].speed);
+//             }
+//             else if (strstr(line, "MaxSpeed:") != NULL)
+//             {
+//                 sscanf(line, "  MaxSpeed: %f", &advanced_cars[current_car].max_speed);
+//             }
+//             else if (strstr(line, "Lane:") != NULL)
+//             {
+//                 sscanf(line, "  Lane: %d", &advanced_cars[current_car].lane);
+//             }
+//             else if (strstr(line, "TargetLane:") != NULL)
+//             {
+//                 sscanf(line, "  TargetLane: %d", &advanced_cars[current_car].target_lane);
+//             }
+//             else if (strstr(line, "LaneChangeProgress:") != NULL)
+//             {
+//                 sscanf(line, "  LaneChangeProgress: %f", &advanced_cars[current_car].lane_change_progress);
+//             }
+//             else if (strstr(line, "Direction:") != NULL)
+//             {
+//                 sscanf(line, "  Direction: %d", &advanced_cars[current_car].direction);
+//             }
+//             else if (strstr(line, "Color:") != NULL)
+//             {
+//                 sscanf(line, "  Color: %f %f %f",
+//                        &advanced_cars[current_car].color[0],
+//                        &advanced_cars[current_car].color[1],
+//                        &advanced_cars[current_car].color[2]);
+//             }
+//             else if (strstr(line, "IsChangingLane:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  IsChangingLane: %d", &val);
+//                 advanced_cars[current_car].is_changing_lane = val;
+//             }
+//             else if (strstr(line, "IsBraking:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  IsBraking: %d", &val);
+//                 advanced_cars[current_car].is_braking = val;
+//             }
+//             else if (strstr(line, "TargetSpeed:") != NULL)
+//             {
+//                 sscanf(line, "  TargetSpeed: %f", &advanced_cars[current_car].target_speed);
+//             }
+//                 */
+//         }
+//         // Загрузка AdvancedCar2
+//         else if (car_type && current_car >= 0)
+//         {
+//             if (strstr(line, "Position:") != NULL)
+//             {
+//                 sscanf(line, "  Position: %f %f", &cars[current_car].x, &cars[current_car].y);
+//             }
+//             else if (strstr(line, "Speed:") != NULL)
+//             {
+//                 sscanf(line, "  Speed: %f", &cars[current_car].speed);
+//             }
+//             else if (strstr(line, "MaxSpeed:") != NULL)
+//             {
+//                 sscanf(line, "  MaxSpeed: %f", &cars[current_car].max_speed);
+//             }
+//             else if (strstr(line, "Lane:") != NULL)
+//             {
+//                 sscanf(line, "  Lane: %d", &cars[current_car].lane);
+//             }
+//             else if (strstr(line, "TargetLane:") != NULL)
+//             {
+//                 sscanf(line, "  TargetLane: %d", &cars[current_car].target_lane);
+//             }
+//             else if (strstr(line, "LaneChangeProgress:") != NULL)
+//             {
+//                 sscanf(line, "  LaneChangeProgress: %f", &cars[current_car].lane_change_progress);
+//             }
+//             else if (strstr(line, "Direction:") != NULL)
+//             {
+//                 sscanf(line, "  Direction: %d %d",
+//                        &cars[current_car].direction_x,
+//                        &cars[current_car].direction_y);
+//             }
+//             else if (strstr(line, "Color:") != NULL)
+//             {
+//                 sscanf(line, "  Color: %f %f %f",
+//                        &cars[current_car].color[0],
+//                        &cars[current_car].color[1],
+//                        &cars[current_car].color[2]);
+//             }
+//             else if (strstr(line, "IsChangingLane:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  IsChangingLane: %d", &val);
+//                 cars[current_car].is_changing_lane = val;
+//             }
+//             else if (strstr(line, "IsBraking:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  IsBraking: %d", &val);
+//                 cars[current_car].is_braking = val;
+//             }
+//             else if (strstr(line, "TargetSpeed:") != NULL)
+//             {
+//                 sscanf(line, "  TargetSpeed: %f", &cars[current_car].target_speed);
+//             }
+//             else if (strstr(line, "InIntersection:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  InIntersection: %d", &val);
+//                 cars[current_car].in_intersection = val;
+//             }
+//             else if (strstr(line, "HasPriority:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  HasPriority: %d", &val);
+//                 cars[current_car].has_priority = val;
+//             }
+//             else if (strstr(line, "IsTurning:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  IsTurning: %d", &val);
+//                 cars[current_car].is_turning = val;
+//             }
+//             else if (strstr(line, "TurnDirection:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  TurnDirection: %d", &val);
+//                 cars[current_car].turn_direction = val;
+//             }
+//             else if (strstr(line, "TurnProgress:") != NULL)
+//             {
+//                 sscanf(line, "  TurnProgress: %f", &cars[current_car].turn_progress);
+//             }
+//             else if (strstr(line, "RoadID:") != NULL)
+//             {
+//                 sscanf(line, "  RoadID: %d", &cars[current_car].road_id);
+//             }
+//             else if (strstr(line, "WillTurn:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  WillTurn: %d", &val);
+//                 cars[current_car].will_turn = val;
+//             }
+//             else if (strstr(line, "PlannedTurn:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  PlannedTurn: %d", &val);
+//                 cars[current_car].planned_turn = val;
+//             }
+//             else if (strstr(line, "JustHaveTurn:") != NULL)
+//             {
+//                 int val;
+//                 sscanf(line, "  JustHaveTurn: %d", &val);
+//                 cars[current_car].just_have_turn = val;
+//             }
+//         }
+//     }
+
+//     fclose(file);
+//     printf("Simulation loaded successfully from %s\n", filename);
+//     printf("Go back to simulation window\n");
+
+//     // Запускаем соответствующую симуляцию
+//     if (type_simulation == HIGHWAY)
+//     {
+//         /*
+//         start_time = clock();
+//         init();
+//         in_simulation = true;
+//         glutDisplayFunc(displayHighway);
+//         glutTimerFunc(0, updateHighway, 0);
+//         */
+//     }
+//     else if (type_simulation == CROSSROAD)
+//     {
+//         start_time = clock();
+//         init();
+//         in_simulation = true;
+//         glutDisplayFunc(displayCrossroad);
+//         glutTimerFunc(0, timerCrossroad, 0);
+//     }
+// }
+
+
 // сохранение моделирования
 void saveSimulation(const char *filename)
 {
@@ -2609,71 +2841,61 @@ void saveSimulation(const char *filename)
         return;
     }
 
+    // Подсчет общего количества машин
+    int total_cars = 0;
+    for (int i = 0; i < lane_count; i++)
+    {
+        total_cars += count_cars(lanes[i]);
+    }
+
     // Сохраняем тип дороги и количество полос
     fprintf(file, "RoadType: %d\n", type_simulation);
     fprintf(file, "Lanes: %d\n", lines_count);
-    fprintf(file, "CarsCount: %d\n", car_count);
+    fprintf(file, "LaneCount: %d\n", lane_count);
+    fprintf(file, "CarsCount: %d\n", total_cars);
     fprintf(file, "Cars:\n");
 
-    for (int i = 0; i < car_count; i++)
+    int car_index = 0;
+
+    // Сохраняем машины по полосам
+    for (int lane_idx = 0; lane_idx < lane_count; lane_idx++)
     {
-        fprintf(file, "Car %d:\n", i);
-
-        if (type_simulation == HIGHWAY)
+        ListCar *current = lanes[lane_idx];
+        while (current != NULL)
         {
-            printf("come later \n");
-
-            // Сохраняем параметры AdvancedCar для автострады
-
-            /*
-            fprintf(file, "  Type: AdvancedCar\n");
-            fprintf(file, "  Position: %.2f\n", advanced_cars[i].position);
-            fprintf(file, "  Speed: %.2f\n", advanced_cars[i].speed);
-            fprintf(file, "  MaxSpeed: %.2f\n", advanced_cars[i].max_speed);
-            fprintf(file, "  Lane: %d\n", advanced_cars[i].lane);
-            fprintf(file, "  TargetLane: %d\n", advanced_cars[i].target_lane);
-            fprintf(file, "  LaneChangeProgress: %.2f\n", advanced_cars[i].lane_change_progress);
-            fprintf(file, "  Direction: %d\n", advanced_cars[i].direction);
+            CarNode *car = &current->car;
+            fprintf(file, "Car %d:\n", car_index);
+            fprintf(file, "  Type: HighwayCar\n");
+            fprintf(file, "  Position: %.2f\n", car->position);
+            fprintf(file, "  Speed: %.2f\n", car->speed);
+            fprintf(file, "  MaxSpeed: %.2f\n", car->max_speed);
+            fprintf(file, "  Lane: %d\n", car->lane);
+            fprintf(file, "  Direction: %d\n", car->direction);
             fprintf(file, "  Color: %.2f %.2f %.2f\n",
-                    advanced_cars[i].color[0],
-                    advanced_cars[i].color[1],
-                    advanced_cars[i].color[2]);
-            fprintf(file, "  IsChangingLane: %d\n", advanced_cars[i].is_changing_lane);
-            fprintf(file, "  IsBraking: %d\n", advanced_cars[i].is_braking);
-            fprintf(file, "  TargetSpeed: %.2f\n", advanced_cars[i].target_speed);
-            */
+                    car->color[0], car->color[1], car->color[2]);
+            fprintf(file, "  IsBraking: %d\n", car->is_braking);
+
+            // Параметры перестроения
+            fprintf(file, "  IsChangingLane: %d\n", car->is_changing_lane);
+            fprintf(file, "  TargetLane: %d\n", car->target_lane);
+            fprintf(file, "  LaneChangeProgress: %.2f\n", car->lane_change_progress);
+            fprintf(file, "  TargetSpeed: %.2f\n", car->target_speed);
+
+            // Состояние машины
+            fprintf(file, "  State: %d\n", car->state);
+            fprintf(file, "  FixedPosition: %.2f\n", car->fixed_position);
+
+            fprintf(file, "  LaneIndex: %d\n", lane_idx);
+            fprintf(file, "\n");
+
+            car_index++;
+            current = current->next;
         }
-        else
-        {
-            // Сохраняем параметры AdvancedCar2 для перекрестка
-            fprintf(file, "  Type: AdvancedCar2\n");
-            fprintf(file, "  Position: %.2f %.2f\n", cars[i].x, cars[i].y);
-            fprintf(file, "  Speed: %.2f\n", cars[i].speed);
-            fprintf(file, "  MaxSpeed: %.2f\n", cars[i].max_speed);
-            fprintf(file, "  Lane: %d\n", cars[i].lane);
-            fprintf(file, "  TargetLane: %d\n", cars[i].target_lane);
-            fprintf(file, "  LaneChangeProgress: %.2f\n", cars[i].lane_change_progress);
-            fprintf(file, "  Direction: %d %d\n", cars[i].direction_x, cars[i].direction_y);
-            fprintf(file, "  Color: %.2f %.2f %.2f\n",
-                    cars[i].color[0], cars[i].color[1], cars[i].color[2]);
-            fprintf(file, "  IsChangingLane: %d\n", cars[i].is_changing_lane);
-            fprintf(file, "  IsBraking: %d\n", cars[i].is_braking);
-            fprintf(file, "  TargetSpeed: %.2f\n", cars[i].target_speed);
-            fprintf(file, "  InIntersection: %d\n", cars[i].in_intersection);
-            fprintf(file, "  HasPriority: %d\n", cars[i].has_priority);
-            fprintf(file, "  IsTurning: %d\n", cars[i].is_turning);
-            fprintf(file, "  TurnDirection: %d\n", cars[i].turn_direction);
-            fprintf(file, "  TurnProgress: %.2f\n", cars[i].turn_progress);
-            fprintf(file, "  RoadID: %d\n", cars[i].road_id);
-            fprintf(file, "  WillTurn: %d\n", cars[i].will_turn);
-            fprintf(file, "  PlannedTurn: %d\n", cars[i].planned_turn);
-            fprintf(file, "  JustHaveTurn: %d\n", cars[i].just_have_turn);
-        }
-        fprintf(file, "\n");
     }
 
     fclose(file);
     printf("Simulation saved to %s\n", filename);
+    printf("Total cars saved: %d\n", total_cars);
     printf("For continue, press TAB in simulation window\n");
 }
 
@@ -2689,11 +2911,14 @@ void loadSimulation(const char *filename)
 
     char line[256];
     int current_car = -1;
-    bool car_type = false; // 0 - AdvancedCar, 1 - AdvancedCar2
+    bool is_highway_car = false;
+    CarNode temp_car = {0};
+    int lane_index = -1;
 
     // Сброс текущего состояния
-    car_count = 0;
+    free_all_lanes();
     type_simulation = MENU;
+    lines_count = 3; // значение по умолчанию
 
     while (fgets(line, sizeof(line), file))
     {
@@ -2712,226 +2937,212 @@ void loadSimulation(const char *filename)
         else if (strstr(line, "Lanes:") != NULL)
         {
             sscanf(line, "Lanes: %d", &lines_count);
-            if (type_simulation == CROSSROAD)
-            {
-                if (lines_count == 1)
-                    intersection_size = 1.0f;
-                else if (lines_count == 2)
-                    intersection_size = 2.0f;
-                else if (lines_count == 3)
-                    intersection_size = 3.0f;
-                else if (lines_count == 4)
-                    intersection_size = 4.0f;
-                else if (lines_count == 5)
-                    intersection_size = 5.0f;
-            }
+        }
+        else if (strstr(line, "LaneCount:") != NULL)
+        {
+            int saved_lane_count;
+            sscanf(line, "LaneCount: %d", &saved_lane_count);
+            // Восстанавливаем полосы
+            init_lanes(saved_lane_count / 2);
         }
         else if (strstr(line, "CarsCount:") != NULL)
         {
-            sscanf(line, "CarsCount: %d", &car_count);
+            int total_cars;
+            sscanf(line, "CarsCount: %d", &total_cars);
+            printf("Loading %d cars...\n", total_cars);
         }
         // Обработка данных машин
         else if (strstr(line, "Car ") != NULL)
         {
+            // Если есть предыдущая загруженная машина, добавляем её
+            if (current_car >= 0 && lane_index >= 0)
+            {
+                insert_car(&lanes[lane_index], temp_car);
+            }
+
             sscanf(line, "Car %d:", &current_car);
+            temp_car = (CarNode){0}; // Сбрасываем временную машину
+            lane_index = -1;
         }
         else if (strstr(line, "Type:") != NULL)
         {
             char type[20];
             sscanf(line, "  Type: %s", type);
-            car_type = (strcmp(type, "AdvancedCar") == 0) ? false : true;
+            is_highway_car = (strcmp(type, "HighwayCar") == 0);
         }
-        // Загрузка AdvancedCar
-        else if (!car_type && current_car >= 0)
+        // Загрузка HighwayCar
+        else if (is_highway_car && current_car >= 0)
         {
-            printf("come later \n");
-            /*
             if (strstr(line, "Position:") != NULL)
             {
-                sscanf(line, "  Position: %f", &advanced_cars[current_car].position);
+                sscanf(line, "  Position: %f", &temp_car.position);
             }
             else if (strstr(line, "Speed:") != NULL)
             {
-                sscanf(line, "  Speed: %f", &advanced_cars[current_car].speed);
+                sscanf(line, "  Speed: %f", &temp_car.speed);
             }
             else if (strstr(line, "MaxSpeed:") != NULL)
             {
-                sscanf(line, "  MaxSpeed: %f", &advanced_cars[current_car].max_speed);
+                sscanf(line, "  MaxSpeed: %f", &temp_car.max_speed);
             }
             else if (strstr(line, "Lane:") != NULL)
             {
-                sscanf(line, "  Lane: %d", &advanced_cars[current_car].lane);
-            }
-            else if (strstr(line, "TargetLane:") != NULL)
-            {
-                sscanf(line, "  TargetLane: %d", &advanced_cars[current_car].target_lane);
-            }
-            else if (strstr(line, "LaneChangeProgress:") != NULL)
-            {
-                sscanf(line, "  LaneChangeProgress: %f", &advanced_cars[current_car].lane_change_progress);
+                sscanf(line, "  Lane: %d", &temp_car.lane);
             }
             else if (strstr(line, "Direction:") != NULL)
             {
-                sscanf(line, "  Direction: %d", &advanced_cars[current_car].direction);
+                int dir;
+                sscanf(line, "  Direction: %d", &dir);
+                temp_car.direction = (CarDirection)dir;
             }
             else if (strstr(line, "Color:") != NULL)
             {
                 sscanf(line, "  Color: %f %f %f",
-                       &advanced_cars[current_car].color[0],
-                       &advanced_cars[current_car].color[1],
-                       &advanced_cars[current_car].color[2]);
-            }
-            else if (strstr(line, "IsChangingLane:") != NULL)
-            {
-                int val;
-                sscanf(line, "  IsChangingLane: %d", &val);
-                advanced_cars[current_car].is_changing_lane = val;
+                       &temp_car.color[0],
+                       &temp_car.color[1],
+                       &temp_car.color[2]);
             }
             else if (strstr(line, "IsBraking:") != NULL)
             {
                 int val;
                 sscanf(line, "  IsBraking: %d", &val);
-                advanced_cars[current_car].is_braking = val;
-            }
-            else if (strstr(line, "TargetSpeed:") != NULL)
-            {
-                sscanf(line, "  TargetSpeed: %f", &advanced_cars[current_car].target_speed);
-            }
-                */
-        }
-        // Загрузка AdvancedCar2
-        else if (car_type && current_car >= 0)
-        {
-            if (strstr(line, "Position:") != NULL)
-            {
-                sscanf(line, "  Position: %f %f", &cars[current_car].x, &cars[current_car].y);
-            }
-            else if (strstr(line, "Speed:") != NULL)
-            {
-                sscanf(line, "  Speed: %f", &cars[current_car].speed);
-            }
-            else if (strstr(line, "MaxSpeed:") != NULL)
-            {
-                sscanf(line, "  MaxSpeed: %f", &cars[current_car].max_speed);
-            }
-            else if (strstr(line, "Lane:") != NULL)
-            {
-                sscanf(line, "  Lane: %d", &cars[current_car].lane);
-            }
-            else if (strstr(line, "TargetLane:") != NULL)
-            {
-                sscanf(line, "  TargetLane: %d", &cars[current_car].target_lane);
-            }
-            else if (strstr(line, "LaneChangeProgress:") != NULL)
-            {
-                sscanf(line, "  LaneChangeProgress: %f", &cars[current_car].lane_change_progress);
-            }
-            else if (strstr(line, "Direction:") != NULL)
-            {
-                sscanf(line, "  Direction: %d %d",
-                       &cars[current_car].direction_x,
-                       &cars[current_car].direction_y);
-            }
-            else if (strstr(line, "Color:") != NULL)
-            {
-                sscanf(line, "  Color: %f %f %f",
-                       &cars[current_car].color[0],
-                       &cars[current_car].color[1],
-                       &cars[current_car].color[2]);
+                temp_car.is_braking = val;
             }
             else if (strstr(line, "IsChangingLane:") != NULL)
             {
                 int val;
                 sscanf(line, "  IsChangingLane: %d", &val);
-                cars[current_car].is_changing_lane = val;
+                temp_car.is_changing_lane = val;
             }
-            else if (strstr(line, "IsBraking:") != NULL)
+            else if (strstr(line, "TargetLane:") != NULL)
             {
-                int val;
-                sscanf(line, "  IsBraking: %d", &val);
-                cars[current_car].is_braking = val;
+                sscanf(line, "  TargetLane: %d", &temp_car.target_lane);
+            }
+            else if (strstr(line, "LaneChangeProgress:") != NULL)
+            {
+                sscanf(line, "  LaneChangeProgress: %f", &temp_car.lane_change_progress);
             }
             else if (strstr(line, "TargetSpeed:") != NULL)
             {
-                sscanf(line, "  TargetSpeed: %f", &cars[current_car].target_speed);
+                sscanf(line, "  TargetSpeed: %f", &temp_car.target_speed);
             }
-            else if (strstr(line, "InIntersection:") != NULL)
+            else if (strstr(line, "State:") != NULL)
             {
-                int val;
-                sscanf(line, "  InIntersection: %d", &val);
-                cars[current_car].in_intersection = val;
+                sscanf(line, "  State: %d", &temp_car.state);
             }
-            else if (strstr(line, "HasPriority:") != NULL)
+            else if (strstr(line, "FixedPosition:") != NULL)
             {
-                int val;
-                sscanf(line, "  HasPriority: %d", &val);
-                cars[current_car].has_priority = val;
+                sscanf(line, "  FixedPosition: %f", &temp_car.fixed_position);
             }
-            else if (strstr(line, "IsTurning:") != NULL)
+            else if (strstr(line, "LaneIndex:") != NULL)
             {
-                int val;
-                sscanf(line, "  IsTurning: %d", &val);
-                cars[current_car].is_turning = val;
-            }
-            else if (strstr(line, "TurnDirection:") != NULL)
-            {
-                int val;
-                sscanf(line, "  TurnDirection: %d", &val);
-                cars[current_car].turn_direction = val;
-            }
-            else if (strstr(line, "TurnProgress:") != NULL)
-            {
-                sscanf(line, "  TurnProgress: %f", &cars[current_car].turn_progress);
-            }
-            else if (strstr(line, "RoadID:") != NULL)
-            {
-                sscanf(line, "  RoadID: %d", &cars[current_car].road_id);
-            }
-            else if (strstr(line, "WillTurn:") != NULL)
-            {
-                int val;
-                sscanf(line, "  WillTurn: %d", &val);
-                cars[current_car].will_turn = val;
-            }
-            else if (strstr(line, "PlannedTurn:") != NULL)
-            {
-                int val;
-                sscanf(line, "  PlannedTurn: %d", &val);
-                cars[current_car].planned_turn = val;
-            }
-            else if (strstr(line, "JustHaveTurn:") != NULL)
-            {
-                int val;
-                sscanf(line, "  JustHaveTurn: %d", &val);
-                cars[current_car].just_have_turn = val;
+                sscanf(line, "  LaneIndex: %d", &lane_index);
             }
         }
     }
 
+    // Добавляем последнюю загруженную машину
+    if (current_car >= 0 && lane_index >= 0)
+    {
+        insert_car(&lanes[lane_index], temp_car);
+    }
+
     fclose(file);
     printf("Simulation loaded successfully from %s\n", filename);
+
+    // Подсчет загруженных машин
+    int loaded_cars = 0;
+    for (int i = 0; i < lane_count; i++)
+    {
+        loaded_cars += count_cars(lanes[i]);
+    }
+    printf("Loaded cars: %d\n", loaded_cars);
     printf("Go back to simulation window\n");
 
     // Запускаем соответствующую симуляцию
     if (type_simulation == HIGHWAY)
     {
-        /*
         start_time = clock();
         init();
         in_simulation = true;
         glutDisplayFunc(displayHighway);
         glutTimerFunc(0, updateHighway, 0);
-        */
     }
     else if (type_simulation == CROSSROAD)
     {
+        // Для перекрестка нужно использовать другую логику
+        printf("Crossroad simulation loading not fully implemented yet\n");
+        /*
         start_time = clock();
         init();
         in_simulation = true;
         glutDisplayFunc(displayCrossroad);
         glutTimerFunc(0, timerCrossroad, 0);
+        */
     }
 }
+
+
+void displayAccident()
+{
+    printf("Write number of lane (1-%d for right, -1 to -%d for left):\n", lines_count, lines_count);
+    int num;
+    if (scanf("%d", &num) != 1)
+    {
+        printf("ERROR: Invalid input\n");
+        accident_flag = !accident_flag;
+        // Очищаем буфер ввода
+        int c;
+        while ((c = getchar()) != '\n' && c != EOF)
+            ;
+    }
+    else
+    {
+        if (num == 0 || num > lines_count || num < -lines_count)
+        {
+            printf("ERROR: Lane number must be between 1 and %d or -1 and -%d\n", lines_count, lines_count);
+            accident_flag = !accident_flag;
+        }
+        else
+        {
+            accident_lane = num;
+            printf("Accident set on lane %d\n", accident_lane);
+
+            // Создаем аварию на указанной полосе
+            CarDirection dir = (num > 0) ? RIGHT : LEFT;
+            char lane_num = (char)abs(num);
+            int lane_index = get_lane_index(dir, lane_num);
+
+            // Находим две первые машины на этой полосе и создаем аварию
+            ListCar *current = lanes[lane_index];
+            int cars_found = 0;
+
+            while (current != NULL && cars_found < 2)
+            {
+                current->car.state = CAR_STATE_ACCIDENT;
+                current->car.speed = 0.0;
+                current->car.is_braking = true;
+                current->car.color[0] = 1.0;
+                current->car.color[1] = 0.0;
+                current->car.color[2] = 0.0;
+                cars_found++;
+                current = current->next;
+            }
+
+            if (cars_found == 0)
+            {
+                printf("No cars on lane %d to create accident\n", num);
+            }
+            else
+            {
+                printf("Accident created on lane %d affecting %d cars\n", num, cars_found);
+            }
+        }
+    }
+}
+
+// - ---------
+
 
 // окно с информацией о загрузке моделирования
 void loadFromFile()
@@ -2964,26 +3175,26 @@ void loadFromFile()
     drawButton(-0.3f, -0.5f, 0.4f, 0.1f, "Back", button_hover == 5);
 }
 
-void displayAccident()
-{
-    printf("write number of lane:\n");
-    int num;
-    if (scanf("%d", &num) != 1)
-    {
-        printf("ERROR\n");
-        accident_flag = !accident_flag;
-    }
-    else
-    {
-        if (num > lines_count || num < -lines_count || num == 0)
-        {
-            printf("ERROR\n");
-            accident_flag = !accident_flag;
-        }
-        else
-        {
-            accident_lane = num;
-            printf("set to %d\n", accident_lane);
-        }
-    }
-}
+// void displayAccident()
+// {
+//     printf("write number of lane:\n");
+//     int num;
+//     if (scanf("%d", &num) != 1)
+//     {
+//         printf("ERROR\n");
+//         accident_flag = !accident_flag;
+//     }
+//     else
+//     {
+//         if (num > lines_count || num < -lines_count || num == 0)
+//         {
+//             printf("ERROR\n");
+//             accident_flag = !accident_flag;
+//         }
+//         else
+//         {
+//             accident_lane = num;
+//             printf("set to %d\n", accident_lane);
+//         }
+//     }
+// }

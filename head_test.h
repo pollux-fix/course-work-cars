@@ -95,11 +95,13 @@ typedef struct
     float speed; // текущая скорость
     float max_speed;
     char lane; // текущая полоса
+    /* need to delete (3)*/
     char target_lane;
     float lane_change_progress;
+    bool is_changing_lane;
+
     char direction_x, direction_y; // направление движения
     float color[3];
-    bool is_changing_lane;
     bool is_braking;
     float target_speed;
 
