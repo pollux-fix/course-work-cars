@@ -881,45 +881,107 @@ void updateHighway(int value)
     glutTimerFunc(16, updateHighway, 0);
 }
 
-// void updateAdvancedCars(ListCar* head)
+
+// // Новая функция с правильной сигнатурой
+// void updateAdvancedCarsSingleLane(ListCar *head)
 // {
 //     if (!track)
 //         return;
 
-//     struct ListCar *current = head;
+//     ListCar *current = head;
 //     while (current != NULL)
 //     {
-// // ТУТ ОБРАБОТКА ТОРМОЖЕНИЙ И ПЕРЕСТРОЕНИЙ - ФУНКЦИИ СООТВ
+//         CarNode *car = &current->car;
+
+//         // Пропускаем машины в аварии
+//         if (car->state == CAR_STATE_ACCIDENT)
+//         {
+//             current = current->next;
+//             continue;
+//         }
+
+//         // Сначала проверяем столкновения
 //         checkCollisionAvoidance(current);
 
-//         current->car.position += current->car.speed * (current->car.direction == RIGHT ? 1.0f : -1.0f);
-//         // Если машина выехала за пределы дороги
-//         if ((current->car.direction == RIGHT && current->car.position > WINDOW_BORDER) ||
-//             (current->car.direction == LEFT && current->car.position < -WINDOW_BORDER))
+//         // Затем решаем о перестроении (увеличена вероятность)
+//         if (!car->is_changing_lane && rand() % 100 < 15)
+//         { // УВЕЛИЧЕНА ВЕРОЯТНОСТЬ
+//             decideLaneChange(current);
+//         }
+
+//         // Обработка перестроения
+//         if (car->is_changing_lane)
 //         {
-//             if (current->car.direction == RIGHT)
+//             // Плавное торможение перед перестроением
+//             if (car->speed > car->target_speed)
 //             {
-//                 current->car.position = -WINDOW_BORDER - 1;
-//             }
-//             else
-//             {
-//                 current->car.position = WINDOW_BORDER + 1;
+//                 car->speed = fmax(car->target_speed, car->speed * 0.95);
+//                 car->is_braking = true;
 //             }
 
-//             current->car.speed = current->car.max_speed * 0.7;
+//             // Начинаем перестроение когда достигли безопасной скорости
+//             if (car->speed <= car->target_speed * 1.05)
+//             {
+//                 car->lane_change_progress += LANE_CHANGE_SPEED;
+
+//                 // Визуальный эффект перестроения - меняем позицию по Y
+//                 float current_lane_pos, target_lane_pos;
+//                 if (car->direction == RIGHT)
+//                 {
+//                     current_lane_pos = (lines_count - car->lane + 1.0) * LINE_WIDTH;
+//                     target_lane_pos = (lines_count - car->target_lane + 1.0) * LINE_WIDTH;
+//                 }
+//                 else
+//                 {
+//                     current_lane_pos = (-lines_count + car->lane - 1.0) * LINE_WIDTH;
+//                     target_lane_pos = (-lines_count + car->target_lane - 1.0) * LINE_WIDTH;
+//                 }
+
+//                 // Плавное перемещение между полосами (это только для визуализации)
+//                 float interpolated_pos = current_lane_pos * (1 - car->lane_change_progress) +
+//                                          target_lane_pos * car->lane_change_progress;
+
+//                 // если завершили перестроение
+//                 if (car->lane_change_progress >= 1.0)
+//                 {
+//                     // Перемещаем машину в новый список полосы
+//                     int old_lane_index = get_lane_index(car->direction, car->lane);
+//                     int new_lane_index = get_lane_index(car->direction, car->target_lane);
+
+//                     // Сохраняем указатель на следующий элемент перед перемещением
+//                     ListCar *next_car = current->next;
+
+//                     // Удаляем из старой полосы и добавляем в новую
+//                     move_car_to_new_lane(old_lane_index, new_lane_index, current);
+
+//                     // Переходим к следующей машине в исходном списке
+//                     current = next_car;
+//                     continue;
+//                 }
+//             }
 //         }
+
+//         // Обновление позиции
+//         car->position += car->speed * (car->direction == RIGHT ? 1.0f : -1.0f);
 
 //         current = current->next;
 //     }
 // }
 
-// Новая функция с правильной сигнатурой
-void updateAdvancedCarsSingleLane(ListCar *head)
+// // Обертка для существующего вызова
+// void updateAdvancedCars(ListCar **head)
+// {
+//     updateAdvancedCarsSingleLane(*head);
+// }
+
+void updateAdvancedCars(ListCar **head)
 {
     if (!track)
         return;
 
-    ListCar *current = head;
+    ListCar *current = *head;
+    ListCar *prev = NULL;
+
     while (current != NULL)
     {
         CarNode *car = &current->car;
@@ -927,16 +989,17 @@ void updateAdvancedCarsSingleLane(ListCar *head)
         // Пропускаем машины в аварии
         if (car->state == CAR_STATE_ACCIDENT)
         {
+            prev = current;
             current = current->next;
             continue;
         }
 
-        // Сначала проверяем столкновения
+        // Проверяем столкновения
         checkCollisionAvoidance(current);
 
-        // Затем решаем о перестроении (увеличена вероятность)
+        // Решаем о перестроении
         if (!car->is_changing_lane && rand() % 100 < 15)
-        { // УВЕЛИЧЕНА ВЕРОЯТНОСТЬ
+        {
             decideLaneChange(current);
         }
 
@@ -955,23 +1018,6 @@ void updateAdvancedCarsSingleLane(ListCar *head)
             {
                 car->lane_change_progress += LANE_CHANGE_SPEED;
 
-                // Визуальный эффект перестроения - меняем позицию по Y
-                float current_lane_pos, target_lane_pos;
-                if (car->direction == RIGHT)
-                {
-                    current_lane_pos = (lines_count - car->lane + 1.0) * LINE_WIDTH;
-                    target_lane_pos = (lines_count - car->target_lane + 1.0) * LINE_WIDTH;
-                }
-                else
-                {
-                    current_lane_pos = (-lines_count + car->lane - 1.0) * LINE_WIDTH;
-                    target_lane_pos = (-lines_count + car->target_lane - 1.0) * LINE_WIDTH;
-                }
-
-                // Плавное перемещение между полосами (это только для визуализации)
-                float interpolated_pos = current_lane_pos * (1 - car->lane_change_progress) +
-                                         target_lane_pos * car->lane_change_progress;
-
                 // если завершили перестроение
                 if (car->lane_change_progress >= 1.0)
                 {
@@ -982,27 +1028,67 @@ void updateAdvancedCarsSingleLane(ListCar *head)
                     // Сохраняем указатель на следующий элемент перед перемещением
                     ListCar *next_car = current->next;
 
-                    // Удаляем из старой полосы и добавляем в новую
-                    move_car_to_new_lane(old_lane_index, new_lane_index, current);
+                    // Удаляем из текущего списка
+                    if (prev == NULL)
+                    {
+                        *head = next_car;
+                    }
+                    else
+                    {
+                        prev->next = next_car;
+                    }
 
-                    // Переходим к следующей машине в исходном списке
+                    // Создаем копию данных машины с обновленной полосой
+                    CarNode car_data = current->car;
+                    car_data.lane = car_data.target_lane;
+                    car_data.is_changing_lane = false;
+                    car_data.target_lane = -1;
+                    car_data.lane_change_progress = 0.0;
+
+                    // Освобождаем текущий узел
+                    free(current);
+
+                    // Добавляем в новую полосу
+                    insert_car(&lanes[new_lane_index], car_data);
+
+                    // Переходим к следующей машине
                     current = next_car;
                     continue;
                 }
             }
         }
 
-        // Обновление позиции
+        // Движение
         car->position += car->speed * (car->direction == RIGHT ? 1.0f : -1.0f);
 
-        current = current->next;
-    }
-}
+        // Проверка на выезд за пределы (УДАЛЕНИЕ вместо телепортации)
+        bool should_delete = false;
+        if ((car->direction == RIGHT && car->position > WINDOW_BORDER + 2) ||
+            (car->direction == LEFT && car->position < -WINDOW_BORDER - 2))
+        {
+            should_delete = true;
+        }
 
-// Обертка для существующего вызова
-void updateAdvancedCars(ListCar **head)
-{
-    updateAdvancedCarsSingleLane(*head);
+        if (should_delete)
+        {
+            ListCar *next = current->next;
+            if (prev == NULL)
+            {
+                *head = next;
+            }
+            else
+            {
+                prev->next = next;
+            }
+            free(current);
+            current = next;
+        }
+        else
+        {
+            prev = current;
+            current = current->next;
+        }
+    }
 }
 
 void addRandomCar()
@@ -1010,11 +1096,10 @@ void addRandomCar()
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    // Проверяем временной интервал (увеличил интервал)
-    if (current_time - last_add_time < 3.0) // УВЕЛИЧЕН ИНТЕРВАЛ
+    if (current_time - last_add_time < 3.0)
         return;
 
-    // Также проверяем общее количество машин
+    // Проверяем общее количество машин
     int total_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
@@ -1022,7 +1107,7 @@ void addRandomCar()
     }
 
     if (total_cars > 50)
-    { // ОГРАНИЧЕНИЕ ОБЩЕГО КОЛИЧЕСТВА МАШИН
+    {
         return;
     }
 
@@ -1144,7 +1229,7 @@ void checkCollisionAvoidance(ListCar *current)
     float min_distance = SAFE_DISTANCE * 3;
     car->is_braking = false;
 
-    // Проверяем ВСЕ машины на той же полосе, а не только следующую
+    // Проверяем ВСЕ машины на той же полосе
     int current_lane_index = get_lane_index(car->direction, car->lane);
     ListCar *other = lanes[current_lane_index];
 
@@ -1166,19 +1251,16 @@ void checkCollisionAvoidance(ListCar *current)
         {
             min_distance = path_distance;
 
-            // Если машина впереди ближе безопасной дистанции
             if (path_distance < SAFE_DISTANCE * 1.5)
             {
                 car->is_braking = true;
                 float safe_speed = calculateSafeSpeed(*car, path_distance);
 
-                // Плавное торможение до безопасной скорости
                 if (car->speed > safe_speed)
                 {
                     car->speed = fmax(safe_speed, car->speed * BRAKING_FACTOR);
                 }
 
-                // Если очень близко - экстренное торможение
                 if (path_distance < SAFE_DISTANCE * 0.7)
                 {
                     car->speed *= 0.8;
@@ -1207,7 +1289,6 @@ bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed)
     *safe_speed = car->max_speed;
     bool is_safe = true;
 
-    // Получаем индекс новой полосы
     int new_lane_index = get_lane_index(car->direction, new_lane);
     if (new_lane_index < 0 || new_lane_index >= lane_count)
         return false;
@@ -1231,18 +1312,15 @@ bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed)
             other_current_lane = other_car->target_lane;
         }
 
-        // Если машина на целевой полосе
         if (other_current_lane == new_lane)
         {
             float dist = fabs(other_car->position - car->position);
 
-            // Относительное положение
             bool is_in_front = (car->direction == RIGHT && other_car->position > car->position) ||
                                (car->direction == LEFT && other_car->position < car->position);
             bool is_too_close = (car->direction == RIGHT && other_car->position < car->position) ||
                                 (car->direction == LEFT && other_car->position > car->position);
 
-            // Если машина впереди на новой полосе
             if (is_in_front && dist < SAFE_DISTANCE * 2.5)
             {
                 float this_safe_speed = calculateSafeSpeed(*car, dist);
@@ -1256,7 +1334,6 @@ bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed)
                     is_safe = false;
                 }
             }
-            // Если машина сзади на новой полосе и слишком близко
             else if (is_too_close && dist < SAFE_DISTANCE * 1.5)
             {
                 is_safe = false;
@@ -1276,13 +1353,11 @@ void decideLaneChange(ListCar *current_car)
 
     CarNode *car = &current_car->car;
 
-    // Если машина уже перестраивается - завершаем
     if (car->is_changing_lane)
         return;
 
-    // Проверяем, есть ли медленная машина впереди на текущей полосе
     bool slow_car_ahead = false;
-    float distance_to_slow_car = SAFE_DISTANCE * 10; // большая начальная дистанция
+    float distance_to_slow_car = SAFE_DISTANCE * 10;
 
     int current_lane_index = get_lane_index(car->direction, car->lane);
     ListCar *other = lanes[current_lane_index];
@@ -1298,35 +1373,26 @@ void decideLaneChange(ListCar *current_car)
         CarNode *other_car = &other->car;
         float dist = fabs(other_car->position - car->position);
 
-        // Определяем, находится ли машина впереди
         bool is_in_front = (car->direction == RIGHT && other_car->position > car->position) ||
                            (car->direction == LEFT && other_car->position < car->position);
 
-        // Если машина впереди и достаточно близко
         if (is_in_front && dist < SAFE_DISTANCE * 3.0)
         {
-            // Проверяем условия для "медленной машины":
             if (other_car->speed < car->max_speed * 0.7)
-            { // БОЛЕЕ СТРОГИЙ КРИТЕРИЙ
+            {
                 slow_car_ahead = true;
                 distance_to_slow_car = fmin(distance_to_slow_car, dist);
-
-                // Отладочный вывод
-                printf("Slow car ahead! My speed: %.2f, Other speed: %.2f, Distance: %.2f\n",
-                       car->speed, other_car->speed, dist);
             }
         }
         other = other->next;
     }
 
-    // Если нет медленных машин впереди - завершаем
     if (!slow_car_ahead)
     {
         return;
     }
 
-    // Пытаемся перестроиться в обе соседние полосы
-    int lane_change_directions[2] = {-1, 1}; // сначала левая, потом правая
+    int lane_change_directions[2] = {-1, 1};
     bool found_safe_lane = false;
 
     for (int i = 0; i < 2; i++)
@@ -1334,31 +1400,25 @@ void decideLaneChange(ListCar *current_car)
         int dl = lane_change_directions[i];
         int new_lane = car->lane + dl;
 
-        // Проверки корректности полосы
         if (new_lane <= 0 || new_lane > lane_count / 2)
         {
             continue;
         }
 
-        // Проверяем безопасность перестроения
         float safe_speed;
         if (isSafeToChangeLane(current_car, new_lane, &safe_speed))
         {
-            // Если перестроение безопасно, инициализируем его
             car->target_lane = new_lane;
             car->is_changing_lane = true;
             car->lane_change_progress = 0.0;
             car->target_speed = safe_speed;
             found_safe_lane = true;
-
-            printf("Changing lane from %d to %d\n", car->lane, new_lane);
             break;
         }
     }
 
     if (!found_safe_lane)
     {
-        // Если не можем перестроиться, просто замедляемся
         car->is_braking = true;
         float safe_speed = calculateSafeSpeed(*car, distance_to_slow_car);
         if (car->speed > safe_speed)
@@ -1378,9 +1438,7 @@ void remove_cars_out_of_bounds()
         {
             CarNode *car = &(*current)->car;
 
-            // Проверяем, выехала ли машина за пределы и должна быть удалена
             bool should_remove = false;
-
             if (car->direction == RIGHT && car->position > WINDOW_BORDER + 5.0f)
             {
                 should_remove = true;
@@ -1402,27 +1460,6 @@ void remove_cars_out_of_bounds()
             }
         }
     }
-}
-
-void move_car_to_new_lane(int old_lane_index, int new_lane_index, ListCar *car_node)
-{
-    if (car_node == NULL)
-        return;
-
-    // Сохраняем данные машины
-    CarNode car_data = car_node->car;
-
-    // Удаляем из старой полосы
-    remove_car_from_lane(old_lane_index, car_node);
-
-    // Обновляем полосу в данных машины
-    car_data.lane = car_data.target_lane;
-    car_data.is_changing_lane = false;
-    car_data.target_lane = -1;
-    car_data.lane_change_progress = 0.0;
-
-    // Добавляем в новую полосу
-    insert_car(&lanes[new_lane_index], car_data);
 }
 
 // Удаление машины из полосы - ИСПРАВЛЕННАЯ ВЕРСИЯ

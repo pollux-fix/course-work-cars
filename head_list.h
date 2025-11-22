@@ -75,5 +75,4 @@ void decideLaneChange(ListCar *current_car);
 bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed);
 
 void remove_cars_out_of_bounds();
-void move_car_to_new_lane(int old_lane_index, int new_lane_index, ListCar *car_node);
 void remove_car_from_lane(int lane_index, ListCar *car_to_remove);

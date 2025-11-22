@@ -22,8 +22,9 @@
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 3.0
 
-#define MAX_CARS 15
-#define MAX_LANE_CAR 2
+// #define MAX_CARS 15
+#define MAX_CARS 40
+#define MAX_LANE_CAR 4
 //#define MAX_CARS 1
 #define ROAD_LENGTH 20.0
 #define LANES_PER_DIRECTION 3 // по умолчанию
