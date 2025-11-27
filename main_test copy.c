@@ -674,6 +674,7 @@ CarNode create_highway_car(CarDirection direction, char lane)
     else
         car.position = WINDOW_BORDER + 1 + (rand() % 10);
 
+
     return car;
 }
 
@@ -882,7 +883,7 @@ float calculateSafeSpeed(CarNode car, float distance)
 
 void checkCollisionAvoidance(ListCar *current)
 {
-    if (current == NULL)
+    if (current == NULL || current->car.state == ANGRY_BIRD)
         return;
 
     CarNode *car = &current->car;
@@ -1052,12 +1053,14 @@ void updateAdvancedCars(ListCar **head)
         CarNode *car = &current->car;
 
         // Пропускаем машины в аварии
-        if (car->state == CAR_STATE_ACCIDENT)
+        if (car->state == CAR_STATE_ACCIDENT )
         {
             prev = current;
             current = current->next;
             continue;
         }
+
+
 
         // Проверяем столкновения
         checkCollisionAvoidance(current);
@@ -1687,14 +1690,14 @@ void drawCrossroadCar(AdvancedCar2 car)
     glRotatef(display_angle, 0, 0, 1);
 
     // Индикатор перестроения
-    if (car.is_changing_lane)
-    {
-        glColor3f(1.0, 0.5, 0.0);
-        glBegin(GL_LINES);
-        glVertex2f(0, 0);
-        glVertex2f(0, (car.target_lane - car.lane) * LINE_WIDTH);
-        glEnd();
-    }
+    // if (car.is_changing_lane)
+    // {
+    //     glColor3f(1.0, 0.5, 0.0);
+    //     glBegin(GL_LINES);
+    //     glVertex2f(0, 0);
+    //     glVertex2f(0, (car.target_lane - car.lane) * LINE_WIDTH);
+    //     glEnd();
+    // }
 
     // Индикаторы
     if (car.is_braking)
@@ -3117,17 +3120,65 @@ void displayAccident()
             ListCar *current = lanes[lane_index];
             int cars_found = 0;
 
-            while (current != NULL && cars_found < 2)
+            ListCar *car_norm = current->next;
+            ListCar *car_angry = (current->next)->next;
+
+            car_angry->car.state = ANGRY_BIRD;
+            float pos = fabs(car_angry->car.position - car_norm->car.position);
+
+            if (pos < SAFE_DISTANCE)
             {
-                current->car.state = CAR_STATE_ACCIDENT;
-                current->car.speed = 0.0;
-                current->car.is_braking = true;
-                current->car.color[0] = 1.0;
-                current->car.color[1] = 0.0;
-                current->car.color[2] = 0.0;
-                cars_found++;
-                current = current->next;
+                car_angry->car.state = CAR_STATE_ACCIDENT;
+                car_angry->car.speed = 0.0;
+                car_angry->car.is_braking = true;
+                car_angry->car.color[0] = 0.0;
+                car_angry->car.color[1] = 0.0;
+                car_angry->car.color[2] = 0.0;
+
+                car_norm->car.state = CAR_STATE_ACCIDENT;
+                car_norm->car.speed = 0.0;
+                car_norm->car.is_braking = true;
+                car_norm->car.color[0] = 0.0;
+                car_norm->car.color[1] = 0.0;
+                car_norm->car.color[2] = 0.0;
             }
+
+            // float pos;
+
+            // while (current != NULL)
+            // {
+                // if (cars_found == 1)
+                // {
+                //     // float dist = fabs(current->car.position - pos);
+                //     // if (dist < SAFE_DISTANCE)
+                //     // {
+                //     //     current->car.state = CAR_STATE_ACCIDENT;
+                //     //     current->car.speed = 0.0;
+                //     //     current->car.is_braking = true;
+                //     //     current->car.color[0] = 0.0;
+                //     //     current->car.color[1] = 0.0;
+                //     //     current->car.color[2] = 0.0;
+                //     //     cars_found++;
+
+                //     //     break;
+                //     // }
+                //     current->car.avaria = true;
+                // }
+                // else if (cars_found == 0)
+                // {
+                //     current->car.state = CAR_STATE_ACCIDENT;
+                //     current->car.speed = 0.0;
+                //     current->car.is_braking = true;
+                //     current->car.color[0] = 0.0;
+                //     current->car.color[1] = 0.0;
+                //     current->car.color[2] = 0.0;
+                //     cars_found++;
+
+                //     // pos = current->car.position;
+                // }
+                
+            //     current = current->next;
+            // }
 
             if (cars_found == 0)
             {

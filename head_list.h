@@ -32,6 +32,8 @@ typedef struct
     int state;
     float fixed_position;
 
+    // bool avaria;
+
 } CarNode;
 
 typedef struct ListCar

@@ -66,7 +66,8 @@ typedef enum
 typedef enum
 {
     CAR_STATE_NORMAL,
-    CAR_STATE_ACCIDENT
+    CAR_STATE_ACCIDENT,
+    ANGRY_BIRD
 } CarState;
 
 // структура для машин на автостраде
@@ -187,21 +188,21 @@ void displayCrossroad();
 void addCrossroadCar();
 void updateCars();
 
-void decideChangeCrossroad(AdvancedCar2 *car);
-void checkCollisionsCrossroad(AdvancedCar2 *car);
-bool isSafeToChangeCrossroad(AdvancedCar2 *car, char new_lane, float *safe_speed);
-float calculateSpeedCrossroad(AdvancedCar2 *car, float distance);
+// void decideChangeCrossroad(AdvancedCar2 *car);
+// void checkCollisionsCrossroad(AdvancedCar2 *car);
+// bool isSafeToChangeCrossroad(AdvancedCar2 *car, char new_lane, float *safe_speed);
+// float calculateSpeedCrossroad(AdvancedCar2 *car, float distance);
 
-void drawCrossroadCar(AdvancedCar2 car);
+// void drawCrossroadCar(AdvancedCar2 car);
 void drawRoads();
 void drawIntersection();
 void updateTrafficLight();
 
-void decideTurn(AdvancedCar2 *car);
-void executeTurn(AdvancedCar2 *car);
-bool canTurn(AdvancedCar2 *car, TurnDirection turn);
+// void decideTurn(AdvancedCar2 *car);
+// void executeTurn(AdvancedCar2 *car);
+// bool canTurn(AdvancedCar2 *car, TurnDirection turn);
 char getRandomLane(char road_id, char direction);
-bool isCollisionImminent(AdvancedCar2 *car1, AdvancedCar2 *car2);
+// bool isCollisionImminent(AdvancedCar2 *car1, AdvancedCar2 *car2);
 
 // работа с файлами
 
