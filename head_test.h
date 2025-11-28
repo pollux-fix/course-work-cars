@@ -101,7 +101,7 @@ typedef struct
     float lane_change_progress;
     bool is_changing_lane;
 
-    char direction_x, direction_y; // направление движения
+    char direction_x, direction_y, direction; // направление движения
     float color[3];
     bool is_braking;
     float target_speed;
@@ -122,12 +122,17 @@ typedef struct
 
         //float start_display_angle;; // Начальный угол поворота для отрисовки машины
 
+    int original_direction; // Для запоминания исходного направления при повороте
+    int original_lane;      // Для запоминания исходной полосы при повороте
+
+    bool GhostCar; // Флаг для фантомной машины (голова списка)
+
 } AdvancedCar2;
 
 // Глобальные переменные
 
 // AdvancedCar advanced_cars[MAX_CARS]; // машины на автостраде
-AdvancedCar2 cars[MAX_CARS];         // машины на перекрестке
+ AdvancedCar2 cars[MAX_CARS];         // машины на перекрестке
 
 clock_t start_time; // начальное время для таймера
 
