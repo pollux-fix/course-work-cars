@@ -2,8 +2,10 @@
 теперь ЭТО основной файл потому что тут всё новое и всё работает (почти всё)
 */
 
-#include "head_test.h"
-#include "head_list.h"
+// #include "head_test.h"
+// #include "head_list.h"
+
+#include "header.h"
 
 int car_count = 0; // текущее количество машин, которые инициализированы
 
@@ -573,8 +575,10 @@ void initHighwayCar()
 
 /* ПРЯМАЯ ДОРОГА */
 
+HighwayLanes high_lanes[MAX_LANES] = {0};
+
 // Реализация массива полос
-ListCar *lanes[MAX_LANES] = {NULL};
+// ListCar *lanes[MAX_LANES] = {NULL};
 int lane_count; // По умолчанию 3 полосы в каждую сторону
 
 // Инициализация полос
@@ -585,9 +589,15 @@ void init_lanes(int lanes_per_direction)
 
     lane_count = lanes_per_direction * 2;
 
-    // Инициализируем все указатели в NULL
-    for (int i = 0; i < MAX_LANES; i++)
-        lanes[i] = NULL;
+    // // Инициализируем все указатели в NULL
+    // for (int i = 0; i < MAX_LANES; i++)
+    //     lanes[i] = NULL;
+
+    for (int i = 0; i < lane_count; i++)
+    {
+        high_lanes[i].head = NULL;
+        high_lanes[i].tail = NULL;
+    }
 }
 
 // Освобождение памяти всех полос
@@ -595,15 +605,18 @@ void free_all_lanes(void)
 {
     for (int i = 0; i < MAX_LANES; i++)
     {
-        ListCar *current = lanes[i];
+        ListCar *current = high_lanes[i].head;
         while (current != NULL)
         {
             ListCar *to_free = current;
             current = current->next;
             free(to_free);
         }
-        lanes[i] = NULL;
+        high_lanes[i].head = NULL;
+        high_lanes[i].tail = NULL;
     }
+
+
 }
 
 // Получение индекса полосы в массиве
@@ -620,8 +633,8 @@ void update_all_cars(void)
 {
     for (int i = 0; i < lane_count; i++)
     {
-        if (lanes[i] != NULL)
-            updateAdvancedCars(&lanes[i]);
+        if (high_lanes[i].head != NULL)
+            updateAdvancedCars(&high_lanes[i].head);
     }
 }
 
@@ -630,7 +643,7 @@ void draw_all_cars(void)
 {
     for (int i = 0; i < lane_count; i++)
     {
-        ListCar *current = lanes[i];
+        ListCar *current = high_lanes[i].head;
         while (current != NULL)
         {
             drawHighwayCar(current->car);
@@ -694,21 +707,21 @@ ListCar *createCarNode(CarNode car)
     return new;
 }
 
-void insert_car(ListCar **head, CarNode car)
+void insert_car(HighwayLanes *list, CarNode car)
 {
     ListCar *new = createCarNode(car);
     if (!new)
         return;
 
-    if (*head == NULL)
-        *head = new;
+    if (list->head == NULL)
+    {
+        list->head = new;
+        list->tail = new;
+    }
     else
     {
-        ListCar *current = *head;
-        while (current->next != NULL)
-            current = current->next;
-
-        current->next = new;
+        list->tail->next = new;
+        list->tail = new;
     }
 }
 
@@ -894,7 +907,7 @@ void checkCollisionAvoidance(ListCar *current)
 
     // Проверяем ВСЕ машины на той же полосе
     int current_lane_index = get_lane_index(car->direction, car->lane);
-    ListCar *other = lanes[current_lane_index];
+    ListCar *other = high_lanes[current_lane_index].head;
 
     while (other != NULL)
     {
@@ -955,14 +968,12 @@ void updateAdvancedCars(ListCar **head)
         CarNode *car = &current->car;
 
         // Пропускаем машины в аварии
-        if (car->state == CAR_STATE_ACCIDENT )
+        if (car->state == CAR_STATE_ACCIDENT)
         {
             prev = current;
             current = current->next;
             continue;
         }
-
-
 
         // Проверяем столкновения
         checkCollisionAvoidance(current);
@@ -1008,6 +1019,12 @@ void updateAdvancedCars(ListCar **head)
                         prev->next = next_car;
                     }
 
+                    // Обновляем хвост списка если нужно
+                    if (high_lanes[old_lane_index].tail == current)
+                    {
+                        high_lanes[old_lane_index].tail = prev;
+                    }
+
                     // Создаем копию данных машины с обновленной полосой
                     CarNode car_data = current->car;
                     car_data.lane = car_data.target_lane;
@@ -1019,7 +1036,7 @@ void updateAdvancedCars(ListCar **head)
                     free(current);
 
                     // Добавляем в новую полосу
-                    insert_car(&lanes[new_lane_index], car_data);
+                    insert_car(&high_lanes[new_lane_index], car_data);
 
                     // Переходим к следующей машине
                     current = next_car;
@@ -1050,6 +1067,13 @@ void updateAdvancedCars(ListCar **head)
             {
                 prev->next = next;
             }
+
+            // Обновляем хвост списка если нужно
+            if (high_lanes[get_lane_index(car->direction, car->lane)].tail == current)
+            {
+                high_lanes[get_lane_index(car->direction, car->lane)].tail = prev;
+            }
+
             free(current);
             current = next;
         }
@@ -1075,7 +1099,7 @@ void addRandomCar()
     int total_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        total_cars += count_cars(lanes[i]);
+        total_cars += count_cars(high_lanes[i].head);
     }
 
     if (total_cars > MAX_CARS)
@@ -1090,18 +1114,18 @@ void addRandomCar()
     {
         // Правые полосы
         int right_index = get_lane_index(RIGHT, lane_num);
-        if (count_cars(lanes[right_index]) < MAX_LANE_CAR)
+        if (count_cars(high_lanes[right_index].head) < MAX_LANE_CAR)
         {
             CarNode new_car = create_highway_car(RIGHT, lane_num);
-            insert_car(&lanes[right_index], new_car);
+            insert_car(&high_lanes[right_index], new_car);
         }
 
         // Левые полосы
         int left_index = get_lane_index(LEFT, lane_num);
-        if (count_cars(lanes[left_index]) < MAX_LANE_CAR)
+        if (count_cars(high_lanes[left_index].head) < MAX_LANE_CAR)
         {
             CarNode new_car = create_highway_car(LEFT, lane_num);
-            insert_car(&lanes[left_index], new_car);
+            insert_car(&high_lanes[left_index], new_car);
         }
     }
 }
@@ -1121,7 +1145,7 @@ bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed)
         return false;
 
     // Проверяем машины на новой полосе
-    ListCar *other = lanes[new_lane_index];
+    ListCar *other = high_lanes[new_lane_index].head;
     while (other != NULL)
     {
         if (other == current_car)
@@ -1187,7 +1211,7 @@ void decideLaneChange(ListCar *current_car)
     float distance_to_slow_car = SAFE_DISTANCE * 10;
 
     int current_lane_index = get_lane_index(car->direction, car->lane);
-    ListCar *other = lanes[current_lane_index];
+    ListCar *other = high_lanes[current_lane_index].head;
 
     while (other != NULL)
     {
@@ -1260,12 +1284,14 @@ void remove_cars_out_of_bounds()
 {
     for (int i = 0; i < lane_count; i++)
     {
-        ListCar **current = &lanes[i];
-        while (*current != NULL)
-        {
-            CarNode *car = &(*current)->car;
+        ListCar *current = high_lanes[i].head;
+        ListCar *prev = NULL;
 
+        while (current != NULL)
+        {
+            CarNode *car = &current->car;
             bool should_remove = false;
+
             if (car->direction == RIGHT && car->position > WINDOW_BORDER + 5.0f)
             {
                 should_remove = true;
@@ -1277,13 +1303,29 @@ void remove_cars_out_of_bounds()
 
             if (should_remove)
             {
-                ListCar *to_remove = *current;
-                *current = to_remove->next;
+                ListCar *to_remove = current;
+                current = current->next;
+
+                if (prev == NULL)
+                {
+                    high_lanes[i].head = current;
+                }
+                else
+                {
+                    prev->next = current;
+                }
+
+                if (to_remove == high_lanes[i].tail)
+                {
+                    high_lanes[i].tail = prev;
+                }
+
                 free(to_remove);
             }
             else
             {
-                current = &(*current)->next;
+                prev = current;
+                current = current->next;
             }
         }
     }
@@ -1328,16 +1370,16 @@ update: после поворота машина не меняет список 
         => так как список не меняется - это что то типо фрага машины, который определяет куда она поедет дальше
 */
 
-typedef struct ListCarCross {
-    AdvancedCar2 car;
-    struct ListCarCross *next;
-} ListCarCross;
+// typedef struct ListCarCross {
+//     AdvancedCar2 car;
+//     struct ListCarCross *next;
+// } ListCarCross;
 
-// Структура для хранения головы и хвоста списка
-typedef struct {
-    ListCarCross *head;
-    ListCarCross *tail;
-} LaneList;
+// // Структура для хранения головы и хвоста списка
+// typedef struct {
+//     ListCarCross *head;
+//     ListCarCross *tail;
+// } LaneList;
 
 LaneList lanesCross[4][5] = {0}; // [направления (картинка выше)][количесво полос]
 
@@ -2763,6 +2805,12 @@ void timerCrossroad(int value)
 
 /*  РАБОТА С ФАЙЛАМИ */
 
+
+/*
+возможно она не очень работает, потому что она не доделанная и кривая 
+        :)
+*/
+
 // сохранение моделирования
 void saveSimulation(const char *filename)
 {
@@ -2777,7 +2825,7 @@ void saveSimulation(const char *filename)
     int total_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        total_cars += count_cars(lanes[i]);
+        total_cars += count_cars(high_lanes[i].head);
     }
 
     // Сохраняем тип дороги и количество полос
@@ -2792,7 +2840,7 @@ void saveSimulation(const char *filename)
     // Сохраняем машины по полосам
     for (int lane_idx = 0; lane_idx < lane_count; lane_idx++)
     {
-        ListCar *current = lanes[lane_idx];
+        ListCar *current = high_lanes[lane_idx].head;
         while (current != NULL)
         {
             CarNode *car = &current->car;
@@ -2889,7 +2937,7 @@ void loadSimulation(const char *filename)
             // Если есть предыдущая загруженная машина, добавляем её
             if (current_car >= 0 && lane_index >= 0)
             {
-                insert_car(&lanes[lane_index], temp_car);
+                insert_car(&high_lanes[lane_index], temp_car);
             }
 
             sscanf(line, "Car %d:", &current_car);
@@ -2976,7 +3024,7 @@ void loadSimulation(const char *filename)
     // Добавляем последнюю загруженную машину
     if (current_car >= 0 && lane_index >= 0)
     {
-        insert_car(&lanes[lane_index], temp_car);
+        insert_car(&high_lanes[lane_index], temp_car);
     }
 
     fclose(file);
@@ -2986,7 +3034,7 @@ void loadSimulation(const char *filename)
     int loaded_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        loaded_cars += count_cars(lanes[i]);
+        loaded_cars += count_cars(high_lanes[i].head);
     }
     printf("Loaded cars: %d\n", loaded_cars);
     printf("Go back to simulation window\n");
@@ -3046,7 +3094,7 @@ void displayAccident()
             int lane_index = get_lane_index(dir, lane_num);
 
             // Находим две первые машины на этой полосе и создаем аварию
-            ListCar *current = lanes[lane_index];
+            ListCar *current = high_lanes[lane_index].head;
             int cars_found = 0;
 
             ListCar *car_norm = current->next;
