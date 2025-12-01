@@ -361,9 +361,9 @@ void drawAboutScreen()
     glVertex2f(1.0f, 1.0f);
     glEnd();
 
-    char str[8][1000] = {"ABOUT US", " ", "This program for modeling automobile traffic was created as a coursework",
-                         "Made by: Kalinichenko Vera", "group: 5131001/40001",
-                         "SPBSTU, Information security", " 2025 year", "Supervisor: Pankov I.D."};
+    char str[8][1000] = {"ABOUT US", " ", "This program for modeling automobile traffic was created as a coursework (for 2 semesters)",
+                         "Made by: Kalinichenko Vera, Vozmilova Polina", "group: 5131001/40001",
+                         "SPBSTU, Information security", " 2025 year", "Supervisors: Pankov I.D., Malishev E.V."};
 
     glColor3f(0.0f, 0.0f, 0.0f);
     float y_pos = 0.6f;
@@ -771,6 +771,65 @@ void drawHighway()
     glEnd();
 
     glColor3f(0.0, 0.0, 0.0);
+
+    float y = -1.0;
+    // полосы влево
+    for (int lane = 0; lane < lines_count; lane++)
+    {
+        char lane_num[3];
+        sprintf(lane_num, "%d", lane);
+
+        glRasterPos2f(-WINDOW_BORDER + 0.5, y - LINE_WIDTH * lane);
+        for (char *c = lane_num; *c != '\0'; c++)
+        {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
+        }
+    }
+
+    // полосы вправо
+    for (int lane = lines_count; lane < lines_count*2; lane++)
+    {
+        char lane_num[3];
+        sprintf(lane_num, "%d", lane);
+
+        glRasterPos2f(WINDOW_BORDER - 1.5, (lane - 1)*LINE_WIDTH);
+        for (char *c = lane_num; *c != '\0'; c++)
+        {
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
+        }
+    }
+
+
+
+    // // при флаге дтп
+    // if (accident_flag)
+    // {
+    //     const char str[4][100] = {"ACCIDENT MODE", "choose lane and wait", "cars will be red, if them in accident"};
+
+    //     glColor3f(1.0f, 1.0f, 1.0f);
+    //     float y_pos = -12.0f;
+    //     for (int i = 0; i < 4; i++)
+    //     {
+    //         glRasterPos2f(10.0f, y_pos);
+    //         for (int j = 0; j < strlen(str[i]); j++)
+    //         {
+    //             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
+    //         }
+    //         y_pos -= 1.0f;
+    //     }
+    //     // кнопки выбора полосы
+
+    //     for (int i = -lines_count; i <= lines_count; i++)
+    //     {
+    //         if (i == 0)
+    //             continue;
+
+    //         char label[10];
+    //         sprintf(label, "%d", i);
+    //         bool active = (accident_lane == i);
+    //         drawButtonNumber(WINDOW_BORDER / 2 + (i - 1) * 1.2f, -WINDOW_BORDER + 2, 1.0f, 1.5f, label, active);
+    //     }
+    // }
 }
 
 void drawHighwayCar(CarNode car)
@@ -805,6 +864,16 @@ void drawHighwayCar(CarNode car)
         glVertex2f(0.7, -0.15);
         glVertex2f(0.72, -0.3);
         glVertex2f(0.72, -0.15);
+        glEnd();
+    }
+
+    // при перестроении линия
+    if (car.is_changing_lane)
+    {
+        glColor3f(1.0, 0.75, 0.5);
+        glBegin(GL_LINES);
+        glVertex2f(0, 0);
+        glVertex2f(0, (car.target_lane - car.lane) * LINE_WIDTH);
         glEnd();
     }
 
@@ -898,12 +967,17 @@ float calculateSafeSpeed(CarNode car, float distance)
 
 void checkCollisionAvoidance(ListCar *current)
 {
-    if (current == NULL || current->car.state == ANGRY_BIRD)
+    if (current == NULL /*|| current->car.state == ANGRY_BIRD*/ )
         return;
 
     CarNode *car = &current->car;
     float min_distance = SAFE_DISTANCE * 3;
     car->is_braking = false;
+
+    // if (car->state == ANGRY_BIRD)
+    // {
+    //     printf("angry car");
+    // }
 
     // Проверяем ВСЕ машины на той же полосе
     int current_lane_index = get_lane_index(car->direction, car->lane);
@@ -929,6 +1003,22 @@ void checkCollisionAvoidance(ListCar *current)
 
             if (path_distance < SAFE_DISTANCE * 1.5)
             {
+                if (car->state == ANGRY_BIRD && other->car.state == CAR_STATE_ACCIDENT)
+                {
+                    if (path_distance > 1.5)
+                        continue;
+                    else
+                    {
+                        car->state = CAR_STATE_ACCIDENT;
+                        car->speed = 0.0;
+                        car->is_braking = true;
+                        car->color[0] = 0.0;
+                        car->color[1] = 0.0;
+                        car->color[2] = 0.0;
+                        break;
+                    }
+                }
+
                 car->is_braking = true;
                 float safe_speed = calculateSafeSpeed(*car, path_distance);
 
@@ -3065,7 +3155,8 @@ void loadSimulation(const char *filename)
 
 void displayAccident()
 {
-    printf("Write number of lane (1-%d for right, -1 to -%d for left):\n", lines_count, lines_count);
+    printf("Write number of lane (0-%d for right, %d to %d for left):\n", \
+        lines_count-1, lines_count, lines_count*2 - 1);
     int num;
     if (scanf("%d", &num) != 1)
     {
@@ -3078,7 +3169,7 @@ void displayAccident()
     }
     else
     {
-        if (num == 0 || num > lines_count || num < -lines_count)
+        if (num < 0 || num > lines_count*2)
         {
             printf("ERROR: Lane number must be between 1 and %d or -1 and -%d\n", lines_count, lines_count);
             accident_flag = !accident_flag;
@@ -3089,13 +3180,13 @@ void displayAccident()
             printf("Accident set on lane %d\n", accident_lane);
 
             // Создаем аварию на указанной полосе
-            CarDirection dir = (num > 0) ? RIGHT : LEFT;
+            CarDirection dir = (num > lines_count - 1) ? RIGHT : LEFT;
             char lane_num = (char)abs(num);
             int lane_index = get_lane_index(dir, lane_num);
 
             // Находим две первые машины на этой полосе и создаем аварию
             ListCar *current = high_lanes[lane_index].head;
-            int cars_found = 0;
+            // int cars_found = 0;
 
             ListCar *car_norm = current->next;
             ListCar *car_angry = (current->next)->next;
@@ -3112,6 +3203,15 @@ void displayAccident()
                 car_angry->car.color[1] = 0.0;
                 car_angry->car.color[2] = 0.0;
 
+                car_norm->car.state = CAR_STATE_ACCIDENT;
+                car_norm->car.speed = 0.0;
+                car_norm->car.is_braking = true;
+                car_norm->car.color[0] = 0.0;
+                car_norm->car.color[1] = 0.0;
+                car_norm->car.color[2] = 0.0;
+            }
+            else
+            {
                 car_norm->car.state = CAR_STATE_ACCIDENT;
                 car_norm->car.speed = 0.0;
                 car_norm->car.is_braking = true;
@@ -3157,14 +3257,14 @@ void displayAccident()
             //     current = current->next;
             // }
 
-            if (cars_found == 0)
-            {
-                printf("No cars on lane %d to create accident\n", num);
-            }
-            else
-            {
-                printf("Accident created on lane %d affecting %d cars\n", num, cars_found);
-            }
+            // if (cars_found == 0)
+            // {
+            //     printf("No cars on lane %d to create accident\n", num);
+            // }
+            // else
+            // {
+            //     printf("Accident created on lane %d affecting %d cars\n", num, cars_found);
+            // }
         }
     }
 }
