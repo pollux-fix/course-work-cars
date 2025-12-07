@@ -198,7 +198,8 @@ void menuWindow()
     char *str = "MAIN MENU";
     glColor3f(0.0f, 0.0f, 0.0f);
     glRasterPos2f(-0.15f, 0.65f);
-    for (int i = 0; i < strlen(str); i++)
+    int n = strlen(str);
+    for (int i = 0; i < n; i++)
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, str[i]);
 
     glColor3f(0.0f, 0.0f, 0.0f);
@@ -208,7 +209,8 @@ void menuWindow()
 
     char *str3 = "(per direction. default - 3)";
     glRasterPos2f(0.1f, 0.15f);
-    for (int i = 0; i < strlen(str3); i++)
+    n = strlen(str3);
+    for (int i = 0; i < n; i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, str3[i]);
 
     // Кнопки выбора количества полос
@@ -278,7 +280,8 @@ void drawButton(float x, float y, float width, float height, const char *text, i
     float text_y = y + height / 2.0f - 0.02f;
     glRasterPos2f(text_x, text_y);
     //glRasterPos2f(x + width / 2 - 0.05f, y + height / 2 - 0.03f);
-    for (int i = 0; i < strlen(text); i++)
+    int n = strlen(text);
+    for (int i = 0; i < n; i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
 }
 
@@ -338,7 +341,8 @@ void drawInfoScreen()
     for (int i = 0; i < 12; i++)
     {
         glRasterPos2f(-0.7f, y_pos);
-        for (int j = 0; j < strlen(str[i]); j++)
+        int n = strlen(str[i]);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
         }
@@ -370,7 +374,8 @@ void drawAboutScreen()
     for (int i = 0; i < 8; i++)
     {
         glRasterPos2f(-0.7f, y_pos);
-        for (int j = 0; j < strlen(str[i]); j++)
+        int n = strlen(str[i]);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
         }
@@ -491,7 +496,8 @@ void infoStatistic(bool flag)
     char str3[100] = "ESC - exit, TAB - pause, S - save";
 
     glRasterPos2f(-WINDOW_BORDER + 1, WINDOW_BORDER - 3);
-    for (int j = 0; j < strlen(str3); j++)
+    int n = strlen(str3);
+    for (int j = 0; j < n; j++)
     {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str3[j]);
     }
@@ -500,7 +506,8 @@ void infoStatistic(bool flag)
     {
         char str3[50] = "A - accident";
         glRasterPos2f(-WINDOW_BORDER + 1, WINDOW_BORDER - 2);
-        for (int j = 0; j < strlen(str3); j++)
+        n = strlen(str3);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str3[j]);
         }
@@ -512,7 +519,8 @@ void infoStatistic(bool flag)
     {
     case (HIGHWAY):
     {
-        for (int j = 0; j < strlen(type[0]); j++)
+        n = strlen(type[0]);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, type[0][j]);
         }
@@ -520,7 +528,8 @@ void infoStatistic(bool flag)
     }
     case (CROSSROAD):
     {
-        for (int j = 0; j < strlen(type[1]); j++)
+        n = strlen(type[1]);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, type[1][j]);
         }
@@ -736,12 +745,12 @@ void drawHighway()
     glVertex2f(WINDOW_BORDER, (lines_count + 0.5) * LINE_WIDTH);
     glVertex2f(-WINDOW_BORDER, (lines_count + 0.5) * LINE_WIDTH);
     glEnd();
-
+    
+    glColor3f(0.81, 0.81, 0.81);
+    glLineStipple(1.0f, 0x00FF);
     // пунктирная разметка
     for (int i = -lines_count - 0.5; i <= (lines_count - 0.5); i++)
     {
-        glColor3f(0.81, 0.81, 0.81);
-        glLineStipple(1.0f, 0x00FF);
         glEnable(GL_LINE_STIPPLE);
         glBegin(GL_LINES);
         glVertex2f(-WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
@@ -811,7 +820,8 @@ void drawHighway()
     //     for (int i = 0; i < 4; i++)
     //     {
     //         glRasterPos2f(10.0f, y_pos);
-    //         for (int j = 0; j < strlen(str[i]); j++)
+    //         int n = strlen(str[i]);
+    //         for (int j = 0; j < n; j++)
     //         {
     //             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
     //         }
@@ -1568,12 +1578,12 @@ void drawRoads()
         glEnd();
     }
 
+    glColor3f(0.81, 0.81, 0.81);
+    glLineStipple(1.0f, 0x00FF);
     // Разметка горизонтальной дороги
     glColor3f(1.0, 1.0, 1.0);
     for (int i = -lines_count; i <= lines_count; i++)
     {
-        glColor3f(0.81, 0.81, 0.81);
-        glLineStipple(1.0f, 0x00FF);
         glEnable(GL_LINE_STIPPLE);
         glBegin(GL_LINES);
         glVertex2f(-WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
@@ -1582,13 +1592,13 @@ void drawRoads()
         glDisable(GL_LINE_STIPPLE);
     }
 
+    glColor3f(0.81, 0.81, 0.81);
+    glLineStipple(1.0f, 0x00FF);
     // Разметка вертикальной дороги
     if (type_simulation == CROSSROAD)
     {
         for (int i = -lines_count; i <= lines_count; i++)
         {
-            glColor3f(0.81, 0.81, 0.81);
-            glLineStipple(1.0f, 0x00FF);
             glEnable(GL_LINE_STIPPLE);
             glBegin(GL_LINES);
             glVertex2f((i + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
@@ -3293,7 +3303,8 @@ void loadFromFile()
     for (int i = 0; i < 10; i++)
     {
         glRasterPos2f(-0.7f, y_pos);
-        for (int j = 0; j < strlen(str[i]); j++)
+        int n = strlen(str[i]);
+        for (int j = 0; j < n; j++)
         {
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, str[i][j]);
         }
