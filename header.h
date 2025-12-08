@@ -15,7 +15,7 @@
 
 #define MIN_SPEED 0.1f
 #define MAX_SPEED 0.2f
-#define TURN_SPEED 0.15f
+#define TURN_SPEED 0.05f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 3.0
@@ -130,7 +130,6 @@ typedef struct
     bool is_braking;
     float target_speed;
 
-    bool in_intersection;
     bool has_priority; // приоритет пересечения перекрестка
     bool is_turning;
     TurnDirection turn_direction;
@@ -138,7 +137,6 @@ typedef struct
     char road_id; // тип дороги (вертикальная или горизонтальная)
     bool will_turn;
     TurnDirection planned_turn;
-    bool just_have_turn;
 
     float turn_start_x;          // Начальная X-координата при начале поворота
     float turn_start_y;          // Начальная Y-координата при начале поворота
@@ -149,7 +147,11 @@ typedef struct
     int original_direction; // Для запоминания исходного направления при повороте
     int original_lane;      // Для запоминания исходной полосы при повороте
 
-    bool GhostCar; // Флаг для фантомной машины (голова списка)
+    //bool GhostCar; // Флаг для фантомной машины (голова списка)
+
+    bool in_intersection;      // Находится ли машина на перекрестке
+    bool entered_on_green;     // Въехала ли машина на зеленый
+    bool just_have_turn;       // Только что повернула
 
 } AdvancedCar2;
 

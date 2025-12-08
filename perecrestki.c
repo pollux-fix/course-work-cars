@@ -1671,6 +1671,11 @@ void drawIntersection()
     // Отрисовка светофоров
     float light_size = 0.5;
 
+    // для желтого
+    float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+    float time_since_switch = current_time - last_light_switch;
+    bool is_yellow = (time_since_switch > 8.0 && time_since_switch < 10.0); // Желтый за 1 секунду до смены
+
     // Горизонтальный светофор (справа)
     glColor3f(0.0, 0.0, 0.0);
 
@@ -1684,15 +1689,20 @@ void drawIntersection()
         glEnd();
     }
 
-    // Красный/зеленый для горизонтальной дороги
-    if (horizontal_green)
+    // Определяем цвет для горизонтальной дороги
+    if (is_yellow)
     {
-        glColor3f(0.0, 1.0, 0.0);
+        glColor3f(1.0, 1.0, 0.0); // Желтый (постоянный, без мигания)
+    }
+    else if (horizontal_green)
+    {
+        glColor3f(0.0, 1.0, 0.0); // Зеленый
     }
     else
     {
-        glColor3f(1.0, 0.0, 0.0);
+        glColor3f(1.0, 0.0, 0.0); // Красный
     }
+    
     if (type_simulation == CROSSROAD)
     {
         glBegin(GL_QUADS);
@@ -1715,8 +1725,12 @@ void drawIntersection()
         glEnd();
     }
 
-    // Красный/зеленый для вертикальной дороги
-    if (!horizontal_green)
+    // Определяем цвет для вертикальной дороги
+    if (is_yellow)
+    {
+        glColor3f(1.0, 1.0, 0.0); // Желтый
+    }
+    else if (!horizontal_green)
     {
         glColor3f(0.0, 1.0, 0.0); // зеленый
     }
@@ -1724,6 +1738,7 @@ void drawIntersection()
     {
         glColor3f(1.0, 0.0, 0.0); // красный
     }
+    
     if (type_simulation == CROSSROAD)
     {
         glBegin(GL_QUADS);
@@ -1914,196 +1929,6 @@ bool canTurn(AdvancedCar2 *car, TurnDirection turn)
     return true;
 }
 
-/*// совершение поворота
-void executeTurn(AdvancedCar2 *car)
-{
-    // Если машина еще не поворачивает, проверяем условия для начала поворота
-    if (!car->is_turning)
-    {
-        // Условие для начала поворота
-        bool at_turn_start_point = false;
-        float turn_threshold;
-        if (car->planned_turn == TURN_LEFT) turn_threshold = intersection_size;
-        else turn_threshold = intersection_size + 1.4 - 0.25;
-
-        if (car->road_id == 0) { // Горизонтальная дорога
-            if (car->direction_x == 1 && car->x >= -turn_threshold) at_turn_start_point = true;
-            if (car->direction_x == -1 && car->x <= turn_threshold) at_turn_start_point = true;
-        } else { // Вертикальная дорога
-            if (car->direction_y == 1 && car->y >= -turn_threshold) at_turn_start_point = true;
-            if (car->direction_y == -1 && car->y <= turn_threshold) at_turn_start_point = true;
-        }
-
-        // Если машина планирует повернуть, находится в точке старта и поворот возможен
-        if (car->will_turn && at_turn_start_point && canTurn(car, car->planned_turn))
-        {
-            car->is_turning = true;
-            car->turn_progress = 0.0f;
-            //car->speed *= 0.7f; // Замедление для поворота
-            car->speed = TURN_SPEED;
-            car->turn_direction = car->planned_turn; // Устанавливаем направление поворота
-            // Сохраняем начальные координаты для точного расчета дуги
-            car->turn_start_x = car->x;
-            car->turn_start_y = car->y;
-        }
-        else if (car->will_turn && at_turn_start_point && !canTurn(car, car->planned_turn))
-        {
-            // Если запланированный поворот невозможен, отменяем его
-            car->will_turn = false;
-        }
-        return;
-    }
-
-
-    // Выполнение поворота
-    car->turn_progress += 0.01;
-    float progress = fmin(1.0f, car->turn_progress); // Ограничиваем прогресс от 0 до 1
-
-    float Cx, Cy, R_arc, start_angle, end_angle;
-    float current_angle;
-
-    float I = intersection_size; // Половина ширины/высоты перекрестка
-    float LW = LINE_WIDTH;       // Ширина полосы (предполагается 1.0f)
-
-    // Определяем параметры поворота в зависимости от направления движения и типа поворота
-    if (car->road_id == 0) { // Горизонтальная дорога (въезд слева или справа)
-        float entry_y = car->turn_start_y; // Начальная Y-координата (центр полосы)
-        if (car->direction_x == 1) { // Движение вправо
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вверх)
-                Cx = -I;
-                Cy = I;
-                R_arc = I - entry_y;
-                start_angle = 3 * M_PI / 2;
-                end_angle = 2 * M_PI ;
-            } else { // Поворот направо (вниз)
-                Cx = -I-1;
-                Cy = -I-1;
-                R_arc = I + entry_y + 1;
-                start_angle = M_PI / 2;
-                end_angle = 0;
-            }
-        } else { // Движение влево 
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вниз)
-                Cx = I;
-                Cy = -I;
-                R_arc = I + entry_y;
-                start_angle = M_PI / 2;
-                end_angle = M_PI;
-            } else { // Поворот направо (вверх)
-                Cx = I + 1;
-                Cy = I + 1;
-                R_arc = I - entry_y -1;
-                start_angle = M_PI / 2;
-                end_angle = 0;
-            }
-        }
-    } else { // Вертикальная дорога (въезд снизу или сверху)
-        float entry_x = car->turn_start_x; // Начальная X-координата (центр полосы)
-        if (car->direction_y == 1) { // Движение вверх
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (влево)
-                Cx = -I;
-                Cy = -I;
-                R_arc = I + entry_x;
-                start_angle = 0; 
-                end_angle = M_PI / 2;
-            } else { // Поворот направо (вправо)
-                Cx = I + 1;
-                Cy = -I - 1;
-                R_arc = I - entry_x - 1;
-                start_angle = 0;
-                end_angle = -M_PI / 2;
-            }
-        } else { // Движение вниз
-            if (car->turn_direction == TURN_LEFT) { // Поворот налево (вправо)
-                Cx = I;
-                Cy = I;
-                R_arc = I - entry_x; 
-                start_angle = M_PI;
-                end_angle = 3 * M_PI / 2;
-            } else { // Поворот направо (влево)
-                Cx = -I - 1;
-                Cy = I + 1;
-                R_arc = I + entry_x + 1;
-                start_angle = 2 * M_PI;
-                end_angle = 3 * M_PI / 2;
-            }
-        }
-    }
-
-    current_angle = start_angle + (end_angle - start_angle) * progress;
-    car->x = Cx + R_arc * cos(current_angle);
-    car->y = Cy + R_arc * sin(current_angle);
-
-    //Обновляем угол для отрисовки машины (касательная к дуге)
-    if (end_angle > start_angle) { // Против часовой стрелки
-        car->current_display_angle = current_angle + M_PI / 2;
-    } else { // По часовой стрелке
-        car->current_display_angle = current_angle - M_PI / 2;
-    }
-    // Перевод в градусы (для разных х, чтобы машины не поворачивали задом)
-    if (car->x < 0)
-        car->current_display_angle = car->current_display_angle * 180.0f / M_PI + 180.0f;
-    else
-        car->current_display_angle = current_angle * 180.0f / M_PI - 90.0f;
-
-
-    // Завершение поворота
-    if (car->turn_progress >= 1.0)
-    {
-        car->is_turning = false;
-        car->will_turn = false;
-
-        // Меняем направление согласно правостороннему движению
-        if (car->road_id == 0) // Горизонтальная -> Вертикальная
-        {
-            car->road_id = 1;
-
-            if (car->turn_direction == TURN_LEFT)
-            {
-                // Поворот налево: сохраняем относительное направление
-                car->direction_y = car->direction_x;
-                // После левого поворота занимаем крайнюю левую полосу на новой дороге
-                car->lane = (car->direction_y == 1) ? 1 : -1;
-            }
-            else // TURN_RIGHT
-            {
-                // Поворот направо: меняем направление на противоположное
-                car->direction_y = -car->direction_x;
-                // После правого поворота занимаем крайнюю правую полосу на новой дороге
-                car->lane = (car->direction_y == 1) ? lines_count : -lines_count;
-            }
-            
-            car->direction_x = 0;            
-            // Позиционируем на правильной полосе
-            car->x = car->lane * LINE_WIDTH;
-        }
-        else // Вертикальная -> Горизонтальная
-        {
-            car->road_id = 0;
-
-            if (car->turn_direction == TURN_LEFT)
-            {
-                // Поворот налево: сохраняем относительное направление
-                car->direction_x = -car->direction_y;
-                // После левого поворота занимаем крайнюю левую полосу на новой дороге
-                car->lane = (car->direction_x == 1) ? -1 : 1;
-            }
-            else // TURN_RIGHT
-            {
-                // Поворот направо: меняем направление на противоположное
-                car->direction_x = car->direction_y;
-                // После правого поворота занимаем крайнюю правую полосу на новой дороге
-                car->lane = (car->direction_x == 1) ? -lines_count : lines_count;
-            }
-            
-            car->direction_y = 0;            
-            // Позиционируем на правильной полосе
-            car->y = car->lane * LINE_WIDTH;
-        }
-    }
-}
-    */
-
 // совершение поворота ❓✅
 void executeTurn(AdvancedCar2 *car)
 {
@@ -2237,6 +2062,7 @@ void executeTurn(AdvancedCar2 *car)
     {
         car->is_turning = false;
         car->will_turn = false;
+        car->speed = MIN_SPEED;
 
         // Меняем направление согласно правостороннему движению
         if (car->road_id == 0) // Горизонтальная -> Вертикальная
@@ -2337,160 +2163,6 @@ float calculateSpeedCrossroad(AdvancedCar2 *car, float distance)
     return fmax(MIN_SPEED, fmin(car->max_speed, safe_speed));
 }
 
-/* // избегаение столкновений на перекрестке ❌ не работает со списками и не работала впринципе
-void checkCollisionsCrossroad(AdvancedCar2 *car)
-{
-    car->is_braking = false;
-    car->has_priority = true;
-    car->in_intersection = (fabs(car->x) < intersection_size && fabs(car->y) < intersection_size);
-
-    // Определяем параметры в зависимости от дороги
-    float *main_coord = (car->road_id == 0) ? &car->x : &car->y;
-    char *main_dir = (car->road_id == 0) ? &car->direction_x : &car->direction_y;
-
-    // Проверка красного сигнала для этой машины
-    bool has_red_light = (car->road_id == 0 && !horizontal_green) ||
-                         (car->road_id == 1 && horizontal_green);
-
-    // Если машина уже на перекрестке, даем ей приоритет на завершение проезда
-    if (car->in_intersection)
-    {
-        car->has_priority = true;
-        car->just_have_turn = false;
-
-        // Продолжаем движение через перекресток без остановки
-        if (car->speed < car->max_speed / 2)
-        {
-            car->speed += ACCELERATION * 0.5;
-        }
-        return;
-    }
-
-    //Проверка приближения к перекрестку при красном свете
-    if (has_red_light)
-    {
-        float dist_to_stop = fabs(*main_coord) - intersection_size;
-        bool approaching = (*main_dir == 1)
-                               ? (*main_coord < intersection_size && *main_coord > intersection_size - SAFE_DISTANCE * 3)
-                               : (*main_coord > -intersection_size && *main_coord < -intersection_size + SAFE_DISTANCE * 3);
-
-        if (approaching)
-        {
-            // Начинаем плавное торможение
-            float brake_intensity = fmin(1.0, (SAFE_DISTANCE * 3 - dist_to_stop) / SAFE_DISTANCE);
-            car->speed = fmax(0, car->speed - brake_intensity * 0.05);
-            car->is_braking = true;
-            car->has_priority = false;
-
-            // Полная остановка перед перекрестком
-            if (dist_to_stop < 0.5)
-            {
-                car->speed = 0;
-                // Корректируем позицию, чтобы не заехать на перекресток
-                if (*main_dir == 1 && *main_coord > intersection_size - 0.5)
-                {
-                    *main_coord = intersection_size - 0.5;
-                }
-                else if (*main_dir == -1 && *main_coord < -intersection_size + 0.5)
-                {
-                    *main_coord = -intersection_size + 0.5;
-                }
-            }
-            return;
-        }
-    }
-
-    // Проверка столкновений с другими машинами
-    for (int i = 0; i < car_count; i++)
-    {
-        if (&cars[i] == car)
-            continue;
-
-        // Проверяем только машины на той же дороге или на перекрестке
-        bool same_road = (cars[i].road_id == car->road_id);
-        bool both_in_intersection = (car->in_intersection && cars[i].in_intersection);
-
-        if (!same_road && !both_in_intersection)
-            continue;
-
-        // Проверяем, находятся ли машины на одной полосе или пересекающихся траекториях
-        float car_lane = car->lane;
-        if (car->is_changing_lane)
-        {
-            car_lane = car->lane * (1 - car->lane_change_progress) + car->target_lane * car->lane_change_progress;
-        }
-
-        float other_lane = cars[i].lane;
-        if (cars[i].is_changing_lane)
-        {
-            other_lane = cars[i].lane * (1 - cars[i].lane_change_progress) + cars[i].target_lane * cars[i].lane_change_progress;
-        }
-
-        float lane_distance = fabs(car_lane - other_lane) * LINE_WIDTH;
-        if (lane_distance < LINE_WIDTH * 0.8) // Учитываем ширину машины
-        {
-            float path_distance;
-            if (same_road)
-            {
-                path_distance = (car->road_id == 0) ? fabs(cars[i].x - car->x) : fabs(cars[i].y - car->y);
-            }
-            else // На перекрестке
-            {
-                path_distance = sqrt(pow(cars[i].x - car->x, 2) + pow(cars[i].y - car->y, 2));
-            }
-
-            bool is_in_front;
-            if (same_road)
-            {
-                if (car->road_id == 0)
-                {
-                    is_in_front = (car->direction_x == 1 && cars[i].x > car->x) ||
-                                  (car->direction_x == -1 && cars[i].x < car->x);
-                }
-                else
-                {
-                    is_in_front = (car->direction_y == 1 && cars[i].y > car->y) ||
-                                  (car->direction_y == -1 && cars[i].y < car->y);
-                }
-            }
-            else // На перекрестке учитываем все направления
-            {
-                is_in_front = path_distance < SAFE_DISTANCE * 1.5; // Более агрессивное торможение на перекрестке
-            }
-
-            if (is_in_front && path_distance < SAFE_DISTANCE * 2)
-            {
-                car->is_braking = true;
-                float safe_speed = calculateSpeedCrossroad(car, path_distance);
-
-                // Более резкое торможение на перекрестке
-                float braking_factor = both_in_intersection ? 0.6 : 0.8;
-
-                if (car->speed > safe_speed)
-                {
-                    car->speed = fmax(safe_speed, car->speed * braking_factor);
-                }
-
-                // Полная остановка, если слишком близко
-                if (path_distance < SAFE_DISTANCE * 0.5)
-                {
-                    car->speed = 0;
-                }
-            }
-        }
-    }
-
-    // Ускорение, если нет препятствий
-    if (!car->is_braking && car->speed < car->max_speed && !car->in_intersection)
-    {
-        car->speed += ACCELERATION;
-        car->speed = fmin(car->speed, car->max_speed);
-    }
-
-    car->just_have_turn = false;
-}
-*/
-
 // обновление светофора ✅
 void updateTrafficLight()
 {
@@ -2503,85 +2175,201 @@ void updateTrafficLight()
     }
 }
 
-/* // обновление машин для перекрестка
-void updateCars()
+// Проверка светофора для машины на перекрестке ✅
+bool checkTrafficLightForCar(AdvancedCar2 *car)
 {
-    updateTrafficLight();
-
-    for (int i = 0; i < car_count; i++)
+    float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
+    float time_since_switch = current_time - last_light_switch;
+    bool is_yellow = (time_since_switch > 8.0 && time_since_switch < 10.0);
+    
+    // Определяем, какой сигнал горит для данной дороги
+    bool has_red_light = false;
+    bool has_yellow_light = false;
+    
+    // Для горизонтальной дороги
+    if (car->road_id == 0)
     {
-        // checkCollisionsCrossroad(&cars[i]);
-
-        // Если машина будет поворачивать она должна снижать скорость
-        if (cars[i].will_turn && !cars[i].is_turning) // Машина планирует поворот, но еще не начала его
+        if (is_yellow)
         {
-            if ((cars[i].x > -intersection_size * 3 && cars[i].x < -intersection_size) ||
-                (cars[i].x < intersection_size * 3 && cars[i].x > intersection_size) ||
-                (cars[i].y > -intersection_size * 3 && cars[i].y < -intersection_size) ||
-                (cars[i].y < intersection_size * 3 && cars[i].y > intersection_size))
+            has_yellow_light = true;
+        }
+        else if (!horizontal_green)
+        {
+            has_red_light = true;
+        }
+    }
+    // Для вертикальной дороги
+    else
+    {
+        if (is_yellow)
+        {
+            has_yellow_light = true;
+        }
+        else if (horizontal_green)
+        {
+            has_red_light = true;
+        }
+    }
+    
+    return has_red_light || has_yellow_light;
+}
+
+// Проверка столкновений на одной полосе ✅
+void checkSameLaneCollisions(AdvancedCar2 *car)
+{
+    if (car->in_intersection || car->is_turning) return;
+    
+    int car_direction = car->direction / 2; // Преобразуем direction (0-7) в индекс (0-3)
+    int car_lane_index = abs(car->lane) - 1;
+    
+    // Проверяем машины на той же полосе
+    ListCarCross *current = lanesCross[car_direction][car_lane_index].head;
+    
+    while (current != NULL)
+    {
+        AdvancedCar2 *other = &current->car;
+        
+        // Пропускаем саму себя
+        if (other == car)
+        {
+            current = current->next;
+            continue;
+        }
+        
+        // Проверяем только машины на той же полосе, не на перекрестке и не поворачивающие
+        if (other->in_intersection || other->is_turning)
+        {
+            current = current->next;
+            continue;
+        }
+        
+        // Определяем расстояние между машинами
+        float distance;
+        if (car->road_id == 0) // Горизонтальная дорога
+        {
+            distance = fabs(other->x - car->x);
+            
+            // Проверяем, находится ли другая машина впереди
+            bool is_in_front = false;
+            if (car->direction_x == 1 && other->x > car->x) // Движение вправо
+                is_in_front = true;
+            else if (car->direction_x == -1 && other->x < car->x) // Движение влево
+                is_in_front = true;
+            
+            if (is_in_front && distance < 2.5) // Минимальная безопасная дистанция
+            {
+                // Слишком близко! Резко тормозим
+                car->is_braking = true;
+                car->speed *= 0.5;
                 
-                if (cars[i].speed > TURN_SPEED)
-                    cars[i].speed *= 0.95;
-                else
-                    cars[i].speed = TURN_SPEED;
-        }
-
-
-        // Выполнение поворота
-        if (cars[i].will_turn || cars[i].is_turning)
-        {
-            executeTurn(&cars[i]);
-        }
-
-        // Решение о перестроении
-        // if (!cars[i].is_changing_lane && rand() % 100 < 20)
-        // {
-        //     decideChangeCrossroad(&cars[i]);
-        // }
-
-        // Обычное движение
-        if (!cars[i].is_turning)
-        {
-            // Горизонтальная дорога
-            if (cars[i].road_id == 0)
-            {
-                cars[i].x += cars[i].speed * cars[i].direction_x;
-
-                // УДАЛЕНИЕ машины вместо телепортации
-                if ((cars[i].direction_x == 1 && cars[i].x > WINDOW_BORDER + 2) ||
-                    (cars[i].direction_x == -1 && cars[i].x < -WINDOW_BORDER - 2))
+                // Если очень близко - полная остановка
+                if (distance < 1.5)
                 {
-                    // Удаляем машину из массива
-                    for (int j = i; j < car_count - 1; j++)
-                    {
-                        cars[j] = cars[j + 1];
-                    }
-                    car_count--;
-                    continue; // Пропускаем оставшуюся обработку для удаленной машины
+                    car->speed = 0;
+                    // // Отодвигаем немного назад, чтобы избежать наезда
+                    // if (car->direction_x == 1 && car->x > other->x - 0.8)
+                    //     car->x = other->x - 0.8;
+                    // else if (car->direction_x == -1 && car->x < other->x + 0.8)
+                    //     car->x = other->x + 0.8;
                 }
+                break; // Достаточно найти ближайшую машину впереди
             }
-            // Вертикальная дорога
-            else
+        }
+        else // Вертикальная дорога
+        {
+            distance = fabs(other->y - car->y);
+            
+            // Проверяем, находится ли другая машина впереди
+            bool is_in_front = false;
+            if (car->direction_y == 1 && other->y > car->y) // Движение вверх
+                is_in_front = true;
+            else if (car->direction_y == -1 && other->y < car->y) // Движение вниз
+                is_in_front = true;
+            
+            if (is_in_front && distance < 2.5) // Минимальная безопасная дистанция
             {
-                cars[i].y += cars[i].speed * cars[i].direction_y;
-
-                // УДАЛЕНИЕ машины вместо телепортации
-                if ((cars[i].direction_y == 1 && cars[i].y > WINDOW_BORDER + 2) ||
-                    (cars[i].direction_y == -1 && cars[i].y < -WINDOW_BORDER - 2))
+                // Слишком близко! Резко тормозим
+                car->is_braking = true;
+                car->speed *= 0.5;
+                
+                // Если очень близко - полная остановка
+                if (distance < 1.5)
                 {
-                    // Удаляем машину из массива
-                    for (int j = i; j < car_count - 1; j++)
-                    {
-                        cars[j] = cars[j + 1];
-                    }
-                    car_count--;
-                    continue; // Пропускаем оставшуюся обработку для удаленной машины
+                    car->speed = 0;
+                    // // Отодвигаем немного назад, чтобы избежать наезда
+                    // if (car->direction_y == 1 && car->y > other->y - 0.8)
+                    //     car->y = other->y - 0.8;
+                    // else if (car->direction_y == -1 && car->y < other->y + 0.8)
+                    //     car->y = other->y + 0.8;
                 }
+                break; // Достаточно найти ближайшую машину впереди
+            }
+        }
+        
+        current = current->next;
+    }
+}
+
+// Проверка столкновений на перекрестке ✅
+void checkIntersectionCollisions(AdvancedCar2 *car)
+{
+    if (!car->in_intersection) return;
+    
+    // Проверяем машины со всех направлений
+    for (int direction = 0; direction < 8; direction++)
+    {
+        for (int lane_num = 0; lane_num < lines_count; lane_num++)
+        {
+            ListCarCross *current = lanesCross[direction / 2][lane_num].head;
+            
+            while (current != NULL)
+            {
+                AdvancedCar2 *other = &current->car;
+                
+                // Пропускаем саму себя
+                if (other == car)
+                {
+                    current = current->next;
+                    continue;
+                }
+                
+                // Проверяем только машины на перекрестке
+                if (!other->in_intersection)
+                {
+                    current = current->next;
+                    continue;
+                }
+                
+                // Определяем расстояние между машинами
+                float dx = other->x - car->x;
+                float dy = other->y - car->y;
+                float distance = sqrt(dx * dx + dy * dy);
+                
+                // Если слишком близко - тормозим
+                if (distance < 1.0)
+                {
+                    car->is_braking = true;
+                    car->speed = fmax(0, car->speed * 0.8);
+                    
+                    // Если столкновение неизбежно - полная остановка
+                    if (distance < 0.5)
+                    {
+                        car->speed = 0;
+                        // Немного отодвигаем машину
+                        if (distance > 0.1)
+                        {
+                            car->x -= dx * 0.1 / distance;
+                            car->y -= dy * 0.1 / distance;
+                        }
+                    }
+                    break;
+                }
+                
+                current = current->next;
             }
         }
     }
 }
-*/
 
 // обновление машин для перекрестка ✅
 void updateCars()
@@ -2600,8 +2388,21 @@ void updateCars()
             {
                 AdvancedCar2 *car = &current->car;
                 
+                // Проверяем, находится ли машина на перекрестке
+                bool in_intersection_now = (fabs(car->x) < intersection_size + 0.5 && 
+                                           fabs(car->y) < intersection_size + 0.5);
+                
+                // // Если машина только что въехала на перекресток
+                // if (in_intersection_now && !car->in_intersection)
+                // {
+                //     car->entered_on_green = !checkTrafficLightForCar(car);
+                // }
+                
+                car->in_intersection = in_intersection_now;
+                
                 // Проверяем столкновения
-                //checkCollisionsCrossroad(car);
+                checkSameLaneCollisions(car);
+                checkIntersectionCollisions(car);
 
                 // Если машина будет поворачивать, она должна снижать скорость
                 if (car->will_turn && !car->is_turning)
@@ -2612,9 +2413,87 @@ void updateCars()
                         (car->y < intersection_size * 3 && car->y > intersection_size))
                         
                         if (car->speed > TURN_SPEED)
-                            car->speed *= 0.95;
+                            car->speed *= 0.9;
                         else
                             car->speed = TURN_SPEED;
+                }
+
+                // Проверка светофора - только если машина НЕ на перекрестке
+                if (!car->in_intersection)
+                {
+                    bool should_stop = checkTrafficLightForCar(car);
+                    
+                    if (should_stop)
+                    {
+                        // Определяем дистанцию до перекрестка
+                        float dist_to_intersection;
+                        if (car->road_id == 0) // Горизонтальная дорога
+                        {
+                            if (car->direction_x == 1) // Движение вправо
+                            {
+                                dist_to_intersection = -car->x - intersection_size;
+                            }
+                            else // Движение влево
+                            {
+                                dist_to_intersection = car->x - intersection_size;
+                            }
+                        }
+                        else // Вертикальная дорога
+                        {
+                            if (car->direction_y == 1) // Движение вверх
+                            {
+                                dist_to_intersection = -car->y - intersection_size;
+                            }
+                            else // Движение вниз
+                            {
+                                dist_to_intersection = car->y - intersection_size;
+                            }
+                        }
+                        
+                        // Если близко к перекрестку - начинаем тормозить
+                        if (dist_to_intersection < 3.0 && dist_to_intersection > 0.2)
+                        {
+                            car->is_braking = true;
+                            car->speed *= 0.9;
+                        }
+                        // Если очень близко - останавливаемся
+                        else if (dist_to_intersection <= 0.2 && dist_to_intersection > 0)
+                        {
+                            car->speed = 0;
+                            car->is_braking = true;
+                            
+                            // Корректируем позицию, чтобы не заехать на перекресток
+                            if (car->road_id == 0)
+                            {
+                                if (car->direction_x == 1 && car->x > -intersection_size - 0.2)
+                                    car->x = -intersection_size - 0.2;
+                                else if (car->direction_x == -1 && car->x < intersection_size + 0.2)
+                                    car->x = intersection_size + 0.2;
+                            }
+                            else
+                            {
+                                if (car->direction_y == 1 && car->y > -intersection_size - 0.2)
+                                    car->y = -intersection_size - 0.2;
+                                else if (car->direction_y == -1 && car->y < intersection_size + 0.2)
+                                    car->y = intersection_size + 0.2;
+                            }
+                        }
+                    }
+                    else if (car->is_braking && !should_stop)
+                    {
+                        // Если свет зеленый и мы тормозили - начинаем ускоряться
+                        if (car->speed < car->max_speed)
+                            car->speed += 0.005;
+                        else car->is_braking = false;
+
+                    }
+                }
+                else if (car->in_intersection)
+                {
+                    // Если машина уже на перекрестке - продолжаем движение
+                    car->is_braking = false;
+                    //if (car->speed < car->max_speed)
+                        //car->speed += ACCELERATION * 0.5;
                 }
 
                 // Выполнение поворота
@@ -2623,14 +2502,8 @@ void updateCars()
                     executeTurn(car);
                 }
 
-                // Решение о перестроении
-                // if (!car->is_changing_lane && rand() % 100 < 20)
-                // {
-                //     decideChangeCrossroad(car);
-                // }
-
                 // Обычное движение (только если не выполняется поворот)
-                if (!car->is_turning)
+                if (!car->is_turning && car->speed > 0)
                 {
                     // Горизонтальная дорога
                     if (car->road_id == 0)
@@ -2664,7 +2537,6 @@ void updateCars()
                             
                             current = current->next;
                             free(to_remove);
-                            //printf("Car removed from direction\n");
                             continue; // Пропускаем оставшуюся обработку
                         }
                     }
@@ -2700,7 +2572,6 @@ void updateCars()
                             
                             current = current->next;
                             free(to_remove);
-                            //printf("Car removed from direction\n");
                             continue; // Пропускаем оставшуюся обработку
                         }
                     }
@@ -2824,6 +2695,9 @@ void addCrossroadCar()
         new_car.y = start_y;
     }
 
+    new_car.in_intersection = false; 
+    new_car.entered_on_green = false; 
+    new_car.just_have_turn = false; 
     new_car.direction = cross_direction;
     new_car.lane = lane;
     new_car.original_direction = cross_direction;
