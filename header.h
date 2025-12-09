@@ -110,6 +110,8 @@ typedef struct
 {
     ListCar *head;
     ListCar *tail;
+
+    int count;
 } HighwayLanes;
 
 
@@ -262,7 +264,7 @@ CarNode create_highway_car(CarDirection direction, char lane);
 void insert_car(HighwayLanes *list, CarNode car);
 ListCar *createCarNode(CarNode car);
 
-int count_cars(ListCar *head);
+// int count_cars(ListCar *head);
 
 // Новые универсальные функции
 void for_each_lane(void (*func)(ListCar *));

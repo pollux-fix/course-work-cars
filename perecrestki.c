@@ -9,6 +9,9 @@
 
 int car_count = 0; // текущее количество машин, которые инициализированы
 
+int count_cars(HighwayLanes list);
+
+
 int main(int argc, char **argv)
 {
     srand(time(NULL));
@@ -661,16 +664,21 @@ void draw_all_cars(void)
     }
 }
 
-int count_cars(ListCar *head)
+// int count_cars(ListCar *head)
+// {
+//     int count = 0;
+//     ListCar *current = head;
+//     while (current != NULL)
+//     {
+//         count++;
+//         current = current->next;
+//     }
+//     return count;
+// }
+
+int count_cars(HighwayLanes list)
 {
-    int count = 0;
-    ListCar *current = head;
-    while (current != NULL)
-    {
-        count++;
-        current = current->next;
-    }
-    return count;
+    return list.count;
 }
 
 // создает и инициализирует новую машину для автострады
@@ -732,6 +740,8 @@ void insert_car(HighwayLanes *list, CarNode car)
         list->tail->next = new;
         list->tail = new;
     }
+
+    list->count++;
 }
 
 // отрисовка прямой дороги
@@ -749,15 +759,17 @@ void drawHighway()
     glColor3f(0.81, 0.81, 0.81);
     glLineStipple(1.0f, 0x00FF);
     // пунктирная разметка
+    glEnable(GL_LINE_STIPPLE);
+    glBegin(GL_LINES);
     for (int i = -lines_count - 0.5; i <= (lines_count - 0.5); i++)
     {
-        glEnable(GL_LINE_STIPPLE);
-        glBegin(GL_LINES);
+        
         glVertex2f(-WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
         glVertex2f(WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
-        glEnd();
-        glDisable(GL_LINE_STIPPLE);
+       
     }
+    glEnd();
+    glDisable(GL_LINE_STIPPLE);
 
     // границы по краям
     glColor3f(0.0, 0.0, 0.0);
@@ -1199,7 +1211,7 @@ void addRandomCar()
     int total_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        total_cars += count_cars(high_lanes[i].head);
+        total_cars += count_cars(high_lanes[i]);
     }
 
     if (total_cars > MAX_CARS)
@@ -1214,7 +1226,7 @@ void addRandomCar()
     {
         // Правые полосы
         int right_index = get_lane_index(RIGHT, lane_num);
-        if (count_cars(high_lanes[right_index].head) < MAX_LANE_CAR)
+        if (count_cars(high_lanes[right_index]) < MAX_LANE_CAR)
         {
             CarNode new_car = create_highway_car(RIGHT, lane_num);
             insert_car(&high_lanes[right_index], new_car);
@@ -1222,7 +1234,7 @@ void addRandomCar()
 
         // Левые полосы
         int left_index = get_lane_index(LEFT, lane_num);
-        if (count_cars(high_lanes[left_index].head) < MAX_LANE_CAR)
+        if (count_cars(high_lanes[left_index]) < MAX_LANE_CAR)
         {
             CarNode new_car = create_highway_car(LEFT, lane_num);
             insert_car(&high_lanes[left_index], new_car);
@@ -1568,45 +1580,41 @@ void drawRoads()
     glEnd();
 
     // Вертикальная дорога
-    if (type_simulation == CROSSROAD)
-    {
-        glBegin(GL_QUADS);
-        glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
-        glVertex2f((lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
-        glVertex2f((lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
-        glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
-        glEnd();
-    }
+    glBegin(GL_QUADS);
+    glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
+    glVertex2f((lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
+    glVertex2f((lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
+    glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
+    glEnd();
+    
 
     glColor3f(0.81, 0.81, 0.81);
     glLineStipple(1.0f, 0x00FF);
     // Разметка горизонтальной дороги
     glColor3f(1.0, 1.0, 1.0);
+    glEnable(GL_LINE_STIPPLE);
+    glBegin(GL_LINES);
     for (int i = -lines_count; i <= lines_count; i++)
     {
-        glEnable(GL_LINE_STIPPLE);
-        glBegin(GL_LINES);
         glVertex2f(-WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
         glVertex2f(WINDOW_BORDER, (i + 0.5) * LINE_WIDTH);
-        glEnd();
-        glDisable(GL_LINE_STIPPLE);
     }
+    glEnd();
+    glDisable(GL_LINE_STIPPLE);
 
     glColor3f(0.81, 0.81, 0.81);
     glLineStipple(1.0f, 0x00FF);
     // Разметка вертикальной дороги
-    if (type_simulation == CROSSROAD)
+
+    glEnable(GL_LINE_STIPPLE);
+    glBegin(GL_LINES);
+    for (int i = -lines_count; i <= lines_count; i++)
     {
-        for (int i = -lines_count; i <= lines_count; i++)
-        {
-            glEnable(GL_LINE_STIPPLE);
-            glBegin(GL_LINES);
-            glVertex2f((i + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
-            glVertex2f((i + 0.5) * LINE_WIDTH, WINDOW_BORDER);
-            glEnd();
-            glDisable(GL_LINE_STIPPLE);
-        }
+        glVertex2f((i + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
+        glVertex2f((i + 0.5) * LINE_WIDTH, WINDOW_BORDER);
     }
+    glEnd();
+    glDisable(GL_LINE_STIPPLE);
 
     // Края дорог
     glColor3f(0.0, 0.0, 0.0);
@@ -1621,15 +1629,12 @@ void drawRoads()
     glEnd();
 
     // Вертикальная дорога
-    if (type_simulation == CROSSROAD)
-    {
-        glBegin(GL_LINES);
-        glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
-        glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
-        glVertex2f((lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
-        glVertex2f((lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
-        glEnd();
-    }
+    glBegin(GL_LINES);
+    glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
+    glVertex2f(-(lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
+    glVertex2f((lines_count + 0.5) * LINE_WIDTH, -WINDOW_BORDER);
+    glVertex2f((lines_count + 0.5) * LINE_WIDTH, WINDOW_BORDER);
+    glEnd();
 
     glLineWidth(1.0);
 
@@ -2799,7 +2804,7 @@ void saveSimulation(const char *filename)
     int total_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        total_cars += count_cars(high_lanes[i].head);
+        total_cars += count_cars(high_lanes[i]);
     }
 
     // Сохраняем тип дороги и количество полос
@@ -3008,7 +3013,7 @@ void loadSimulation(const char *filename)
     int loaded_cars = 0;
     for (int i = 0; i < lane_count; i++)
     {
-        loaded_cars += count_cars(high_lanes[i].head);
+        loaded_cars += count_cars(high_lanes[i]);
     }
     printf("Loaded cars: %d\n", loaded_cars);
     printf("Go back to simulation window\n");
