@@ -9,27 +9,23 @@
 #include <string.h>
 #include <ctype.h>
 
-// МАКРОСЫ (их еще проверить, мб что-то не используется)
+// МАКРОСЫ 
 
 #define MAX_LANES 10 // Максимум 5 полос в каждую сторону
 
 #define MIN_SPEED 0.1f
 #define MAX_SPEED 0.2f
 #define TURN_SPEED 0.1f
-#define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 3.0
 
 #define MAX_CARS 40
 #define MAX_LANE_CAR 4
-#define ROAD_LENGTH 20.0
 #define LANES_PER_DIRECTION 3
-#define CAR_LENGTH 2.0
 #define BRAKING_FACTOR 0.92
 #define ACCELERATION 0.002
 #define LANE_CHANGE_SPEED 0.008
 
-#define TURN_RADIUS 1.0
 #define WINDOW_BORDER 20
 
 // СТРУКТУРЫ
@@ -74,13 +70,14 @@ typedef enum CarDirection
     LEFT
 } CarDirection;
 
+// статус светофора (цвет)
 enum LightState {
     RED,
     YELLOW,
     GREEN
 };
 
-
+// узел машины на прямой дороге
 typedef struct
 {
     float speed;
@@ -102,17 +99,16 @@ typedef struct
     // Для аварий
     int state;
     float fixed_position;
-
-    // bool avaria;
-
 } CarNode;
 
+// список для одной полосы (пр. дорога)
 typedef struct ListCar
 {
     CarNode car;
     struct ListCar *next;
 } ListCar;
 
+// указатели на голову и хвост списка полосы
 typedef struct 
 {
     ListCar *head;
@@ -156,13 +152,14 @@ typedef struct
 
 } AdvancedCar2;
 
+// список для полосы на перекрестке
 typedef struct ListCarCross
 {
     AdvancedCar2 car;
     struct ListCarCross *next;
 } ListCarCross;
 
-// Структура для хранения головы и хвоста списка
+// Структура для хранения головы и хвоста списка (перекр)
 typedef struct
 {
     ListCarCross *head;
@@ -170,8 +167,7 @@ typedef struct
 } LaneList;
 
 
-
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (тоже проверить, как макросы)
+// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
 
 clock_t start_time; // начальное время для таймера
 
@@ -196,7 +192,7 @@ bool accident_flag = false;
 int accident_lane = 0; // полоса на которой авария
 
 
-// ФУНКЦИИ (пока что все подряд, потом рассортирую)
+// ФУНКЦИИ 
 
 // общие функции
 
@@ -211,7 +207,7 @@ void processMouseMove(int x, int y);
 
 void drawButtonNumber(float x, float y, float width, float height, const char *label, bool active);
 void drawText(float x, float y, const unsigned char *text);
-void infoStatistic(bool flag);
+void infoStatistic();
 
 // прямая дорога
 
@@ -235,10 +231,9 @@ void updateCars();
 
 void drawRoads();
 void drawIntersection();
+
 void updateTrafficLight();
-
 char getRandomLane(char road_id, char direction);
-
 enum LightState checkTrafficLightForCar(AdvancedCar2 *car);
 
 // работа с файлами
@@ -246,10 +241,10 @@ enum LightState checkTrafficLightForCar(AdvancedCar2 *car);
 void loadFromFile();
 void loadSimulation(const char *filename);
 void saveSimulation(const char *filename);
-
 void displayAccident();
 
-// Функции для работы с полосами
+// Функции для работы с полосами (новые)
+
 void init_lanes(int lanes_per_direction);
 void free_all_lanes(void);
 int get_lane_index(CarDirection direction, char lane_number);
@@ -257,19 +252,13 @@ ListCar *get_lane(CarDirection direction, char lane_number);
 
 void drawHighwayCar(CarNode car);
 void updateAdvancedCars(ListCar **head);
-// void updateAdvancedCars(ListCar *head);
 float calculateSafeSpeed(CarNode car, float distance);
 void checkCollisionAvoidance(ListCar *current);
 
 CarNode create_highway_car(CarDirection direction, char lane);
-// void insert_car(ListCar **head, CarNode car);
 void insert_car(HighwayLanes *list, CarNode car);
 ListCar *createCarNode(CarNode car);
 
-// int count_cars(ListCar *head);
-
-// Новые универсальные функции
-void for_each_lane(void (*func)(ListCar *));
 void update_all_cars(void);
 void draw_all_cars(void);
 
@@ -277,6 +266,5 @@ void decideLaneChange(ListCar *current_car);
 bool isSafeToChangeLane(ListCar *current_car, char new_lane, float *safe_speed);
 
 void remove_cars_out_of_bounds();
-void remove_car_from_lane(int lane_index, ListCar *car_to_remove);
-
 void initCrossroadLanes(int lanes_per_direction);
+int count_cars(HighwayLanes list);
