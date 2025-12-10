@@ -15,7 +15,7 @@
 
 #define MIN_SPEED 0.1f
 #define MAX_SPEED 0.2f
-#define TURN_SPEED 0.05f
+#define TURN_SPEED 0.1f
 #define MARKING_WIDTH 0.1
 #define LINE_WIDTH 1.0f
 #define SAFE_DISTANCE 3.0

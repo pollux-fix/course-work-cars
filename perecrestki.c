@@ -2397,10 +2397,20 @@ void updateCars()
                 checkSameLaneCollisions(car);
                 //checkIntersectionCollisions(car);
 
-                // Если машина будет поворачивать, она должна снижать скорость
-                if (car->will_turn && !car->is_turning)
+                // Проверка светофора - только если машина НЕ на перекрестке
+                if (!car->in_intersection)
                 {
-                    if ((car->x > -intersection_size * 3 && car->x < -intersection_size) ||
+                    bool should_stop = true;
+
+                    if (!car->will_turn && checkTrafficLightForCar(car) == GREEN ||
+                        car->will_turn && checkTrafficLightForCar(car) == GREEN && car->planned_turn == TURN_RIGHT ||
+                        car->will_turn && checkTrafficLightForCar(car) != GREEN && car->planned_turn == TURN_LEFT)
+                        should_stop = false;
+                    
+                    // Выполнение поворота
+                    if (!should_stop && car->will_turn)
+                    {
+                        if ((car->x > -intersection_size * 3 && car->x < -intersection_size) ||
                         (car->x < intersection_size * 3 && car->x > intersection_size) ||
                         (car->y > -intersection_size * 3 && car->y < -intersection_size) ||
                         (car->y < intersection_size * 3 && car->y > intersection_size))
@@ -2409,15 +2419,10 @@ void updateCars()
                             car->speed *= 0.9;
                         else
                             car->speed = TURN_SPEED;
-                }
 
-                // Проверка светофора - только если машина НЕ на перекрестке
-                if (!car->in_intersection)
-                {
-                    bool should_stop = true;
-
-                    if (checkTrafficLightForCar(car) == GREEN)
-                        should_stop = false;
+                        checkSameLaneCollisions(car);
+                        executeTurn(car);
+                    }
                     
                     if (should_stop)
                     {
@@ -2453,7 +2458,7 @@ void updateCars()
                             car->speed *= 0.9;
                         }
                         // Если очень близко - останавливаемся
-                        else if (dist_to_intersection <= 0.2 && dist_to_intersection > 0)
+                        else if (dist_to_intersection <= 2.0 && dist_to_intersection > 0)
                         {
                             car->speed = 0;
                             car->is_braking = true;
@@ -2486,7 +2491,6 @@ void updateCars()
                             //checkIntersectionCollisions(car);
                         }
                         else car->is_braking = false;
-
                     }
                 }
                 else if (car->in_intersection)
@@ -2497,12 +2501,13 @@ void updateCars()
                         //car->speed += ACCELERATION * 0.5;
                 }
 
-                // Выполнение поворота
+                // // Выполнение поворота
                 if (car->is_turning || car->will_turn)
                 {
-                    checkSameLaneCollisions(car);
+                    //checkSameLaneCollisions(car);
                     executeTurn(car);
                 }
+
 
                 // Обычное движение (только если не выполняется поворот)
                 if (!car->is_turning && car->speed > 0)
@@ -2612,7 +2617,7 @@ void addCrossroadCar()
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    if (current_time - last_add_time < 0.5) // генерация машин раз в N секунд
+    if (current_time - last_add_time < 1.0) // генерация машин раз в N секунд
         return;
 
     last_add_time = current_time;
