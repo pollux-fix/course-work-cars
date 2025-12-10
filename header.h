@@ -74,6 +74,13 @@ typedef enum CarDirection
     LEFT
 } CarDirection;
 
+enum LightState {
+    RED,
+    YELLOW,
+    GREEN
+};
+
+
 typedef struct
 {
     float speed;
@@ -171,6 +178,7 @@ typedef struct
 } LaneList;
 
 
+
 // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (тоже проверить, как макросы)
 
 clock_t start_time; // начальное время для таймера
@@ -238,6 +246,8 @@ void drawIntersection();
 void updateTrafficLight();
 
 char getRandomLane(char road_id, char direction);
+
+enum LightState checkTrafficLightForCar(AdvancedCar2 *car);
 
 // работа с файлами
 

@@ -1887,6 +1887,24 @@ void decideTurn(AdvancedCar2 *car)
     }
 }
 
+// // проверка возможности поворота ✅
+// bool canTurn(AdvancedCar2 *car, TurnDirection turn)
+// {
+//     // Проверяем, находится ли машина на правильной полосе для поворота
+//     // НАЛЕВО машина может повернуть только с крайней ЛЕВОЙ полосы
+//     if (turn == TURN_LEFT && (abs(car->lane) != 1)) return false;
+//     // НАПРАВО машина может повернуть только с крайней ПРАВОЙ полосы
+//     if (turn == TURN_RIGHT && (abs(car->lane) != lines_count)) return false;
+
+//     // Предсказываем новую полосу после поворота
+//     int new_lane = 0;
+//     if (turn == TURN_LEFT) new_lane = car->lane;
+//     else  new_lane = -(car->lane);
+
+
+//     return true;
+// }
+
 // проверка возможности поворота ✅
 bool canTurn(AdvancedCar2 *car, TurnDirection turn)
 {
@@ -1900,36 +1918,6 @@ bool canTurn(AdvancedCar2 *car, TurnDirection turn)
     int new_lane = 0;
     if (turn == TURN_LEFT) new_lane = car->lane;
     else  new_lane = -(car->lane);
-
-    // // Проверяем машины на целевой дороге и полосе
-    // for (int i = 0; i < car_count; i++)
-    // {
-    //     if (&cars[i] == car)
-    //         continue;
-
-    //     // Машины на целевой дороге и полосе
-    //     if (cars[i].road_id != ((car->road_id + 1) % 2))
-    //         continue;
-    //     if (cars[i].lane != new_lane)
-    //         continue;
-
-    //     // Проверяем расстояние до перекрестка
-    //     float dist;
-    //     if (car->road_id == 0)
-    //     {
-    //         dist = fabs(cars[i].y) - intersection_size;
-    //     }
-    //     else
-    //     {
-    //         dist = fabs(cars[i].x) - intersection_size;
-    //     }
-
-    //     // Если машина приближается к перекрестку на целевой полосе - поворот запрещен
-    //     if (dist < SAFE_DISTANCE * 2 && dist > -intersection_size)
-    //     {
-    //         return false;
-    //     }
-    // }
 
     return true;
 }
@@ -2181,7 +2169,7 @@ void updateTrafficLight()
 }
 
 // Проверка светофора для машины на перекрестке ✅
-bool checkTrafficLightForCar(AdvancedCar2 *car)
+enum LightState checkTrafficLightForCar(AdvancedCar2 *car)
 {
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
     float time_since_switch = current_time - last_light_switch;
@@ -2196,11 +2184,11 @@ bool checkTrafficLightForCar(AdvancedCar2 *car)
     {
         if (is_yellow)
         {
-            has_yellow_light = true;
+            return YELLOW;
         }
         else if (!horizontal_green)
         {
-            has_red_light = true;
+            return RED;
         }
     }
     // Для вертикальной дороги
@@ -2208,15 +2196,15 @@ bool checkTrafficLightForCar(AdvancedCar2 *car)
     {
         if (is_yellow)
         {
-            has_yellow_light = true;
+            return YELLOW;
         }
         else if (horizontal_green)
         {
-            has_red_light = true;
+            return RED;
         }
     }
     
-    return has_red_light || has_yellow_light;
+    return GREEN;
 }
 
 // Проверка столкновений на одной полосе ✅
@@ -2261,21 +2249,21 @@ void checkSameLaneCollisions(AdvancedCar2 *car)
             else if (car->direction_x == -1 && other->x < car->x) // Движение влево
                 is_in_front = true;
             
-            if (is_in_front && distance < 2.5) // Минимальная безопасная дистанция
+            if (is_in_front && distance < 4.0) // Минимальная безопасная дистанция
             {
-                // Слишком близко! Резко тормозим
+                // тормозим
                 car->is_braking = true;
-                car->speed *= 0.5;
+                car->speed *= 0.9;
                 
                 // Если очень близко - полная остановка
-                if (distance < 1.5)
+                if (distance < 2.0)
                 {
                     car->speed = 0;
-                    // // Отодвигаем немного назад, чтобы избежать наезда
-                    // if (car->direction_x == 1 && car->x > other->x - 0.8)
-                    //     car->x = other->x - 0.8;
-                    // else if (car->direction_x == -1 && car->x < other->x + 0.8)
-                    //     car->x = other->x + 0.8;
+                    // Отодвигаем немного назад, чтобы избежать наезда
+                    if (car->direction_x == 1 && car->x > other->x - 0.8)
+                        car->x = other->x - 0.8;
+                    else if (car->direction_x == -1 && car->x < other->x + 0.8)
+                        car->x = other->x + 0.8;
                 }
                 break; // Достаточно найти ближайшую машину впереди
             }
@@ -2291,21 +2279,21 @@ void checkSameLaneCollisions(AdvancedCar2 *car)
             else if (car->direction_y == -1 && other->y < car->y) // Движение вниз
                 is_in_front = true;
             
-            if (is_in_front && distance < 2.5) // Минимальная безопасная дистанция
+            if (is_in_front && distance < 4.0) // Минимальная безопасная дистанция
             {
                 // Слишком близко! Резко тормозим
                 car->is_braking = true;
-                car->speed *= 0.5;
+                car->speed *= 0.9;
                 
                 // Если очень близко - полная остановка
-                if (distance < 1.5)
+                if (distance < 2.0)
                 {
                     car->speed = 0;
-                    // // Отодвигаем немного назад, чтобы избежать наезда
-                    // if (car->direction_y == 1 && car->y > other->y - 0.8)
-                    //     car->y = other->y - 0.8;
-                    // else if (car->direction_y == -1 && car->y < other->y + 0.8)
-                    //     car->y = other->y + 0.8;
+                    // Отодвигаем немного назад, чтобы избежать наезда
+                    if (car->direction_y == 1 && car->y > other->y - 0.8)
+                        car->y = other->y - 0.8;
+                    else if (car->direction_y == -1 && car->y < other->y + 0.8)
+                        car->y = other->y + 0.8;
                 }
                 break; // Достаточно найти ближайшую машину впереди
             }
@@ -2315,66 +2303,66 @@ void checkSameLaneCollisions(AdvancedCar2 *car)
     }
 }
 
-// Проверка столкновений на перекрестке ✅
-void checkIntersectionCollisions(AdvancedCar2 *car)
-{
-    if (!car->in_intersection) return;
+// // Проверка столкновений на перекрестке ✅
+// void checkIntersectionCollisions(AdvancedCar2 *car)
+// {
+//     if (!car->in_intersection) return;
     
-    // Проверяем машины со всех направлений
-    for (int direction = 0; direction < 8; direction++)
-    {
-        for (int lane_num = 0; lane_num < lines_count; lane_num++)
-        {
-            ListCarCross *current = lanesCross[direction / 2][lane_num].head;
+//     // Проверяем машины со всех направлений
+//     for (int direction = 0; direction < 8; direction++)
+//     {
+//         for (int lane_num = 0; lane_num < lines_count; lane_num++)
+//         {
+//             ListCarCross *current = lanesCross[direction / 2][lane_num].head;
             
-            while (current != NULL)
-            {
-                AdvancedCar2 *other = &current->car;
+//             while (current != NULL)
+//             {
+//                 AdvancedCar2 *other = &current->car;
                 
-                // Пропускаем саму себя
-                if (other == car)
-                {
-                    current = current->next;
-                    continue;
-                }
+//                 // Пропускаем саму себя
+//                 if (other == car)
+//                 {
+//                     current = current->next;
+//                     continue;
+//                 }
                 
-                // Проверяем только машины на перекрестке
-                if (!other->in_intersection)
-                {
-                    current = current->next;
-                    continue;
-                }
+//                 // Проверяем только машины на перекрестке
+//                 if (!other->in_intersection)
+//                 {
+//                     current = current->next;
+//                     continue;
+//                 }
                 
-                // Определяем расстояние между машинами
-                float dx = other->x - car->x;
-                float dy = other->y - car->y;
-                float distance = sqrt(dx * dx + dy * dy);
+//                 // Определяем расстояние между машинами
+//                 float dx = other->x - car->x;
+//                 float dy = other->y - car->y;
+//                 float distance = sqrt(dx * dx + dy * dy);
                 
-                // Если слишком близко - тормозим
-                if (distance < 1.0)
-                {
-                    car->is_braking = true;
-                    car->speed = fmax(0, car->speed * 0.8);
+//                 // Если слишком близко - тормозим
+//                 if (distance < 1.0)
+//                 {
+//                     car->is_braking = true;
+//                     car->speed = fmax(0, car->speed * 0.8);
                     
-                    // Если столкновение неизбежно - полная остановка
-                    if (distance < 0.5)
-                    {
-                        car->speed = 0;
-                        // Немного отодвигаем машину
-                        if (distance > 0.1)
-                        {
-                            car->x -= dx * 0.1 / distance;
-                            car->y -= dy * 0.1 / distance;
-                        }
-                    }
-                    break;
-                }
+//                     // Если столкновение неизбежно - полная остановка
+//                     if (distance < 0.5)
+//                     {
+//                         car->speed = 0;
+//                         // Немного отодвигаем машину
+//                         if (distance > 0.1)
+//                         {
+//                             car->x -= dx * 0.1 / distance;
+//                             car->y -= dy * 0.1 / distance;
+//                         }
+//                     }
+//                     break;
+//                 }
                 
-                current = current->next;
-            }
-        }
-    }
-}
+//                 current = current->next;
+//             }
+//         }
+//     }
+// }
 
 // обновление машин для перекрестка ✅
 void updateCars()
@@ -2407,7 +2395,7 @@ void updateCars()
                 
                 // Проверяем столкновения
                 checkSameLaneCollisions(car);
-                checkIntersectionCollisions(car);
+                //checkIntersectionCollisions(car);
 
                 // Если машина будет поворачивать, она должна снижать скорость
                 if (car->will_turn && !car->is_turning)
@@ -2426,7 +2414,10 @@ void updateCars()
                 // Проверка светофора - только если машина НЕ на перекрестке
                 if (!car->in_intersection)
                 {
-                    bool should_stop = checkTrafficLightForCar(car);
+                    bool should_stop = true;
+
+                    if (checkTrafficLightForCar(car) == GREEN)
+                        should_stop = false;
                     
                     if (should_stop)
                     {
@@ -2487,8 +2478,13 @@ void updateCars()
                     else if (car->is_braking && !should_stop)
                     {
                         // Если свет зеленый и мы тормозили - начинаем ускоряться
-                        if (car->speed < car->max_speed)
+                        if (car->speed < 0.15) 
+                        {
+                            car->max_speed = MAX_SPEED;
                             car->speed += 0.005;
+                            checkSameLaneCollisions(car);
+                            //checkIntersectionCollisions(car);
+                        }
                         else car->is_braking = false;
 
                     }
@@ -2502,8 +2498,9 @@ void updateCars()
                 }
 
                 // Выполнение поворота
-                if (car->will_turn || car->is_turning)
+                if (car->is_turning || car->will_turn)
                 {
+                    checkSameLaneCollisions(car);
                     executeTurn(car);
                 }
 
@@ -2615,7 +2612,7 @@ void addCrossroadCar()
     static float last_add_time = 0;
     float current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0;
 
-    if (current_time - last_add_time < 1.5) // генерация машин раз в N секунд
+    if (current_time - last_add_time < 0.5) // генерация машин раз в N секунд
         return;
 
     last_add_time = current_time;
