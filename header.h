@@ -129,7 +129,6 @@ typedef struct
     float speed; // текущая скорость
     float max_speed;
     char lane; // текущая полоса
-    /* need to delete (3)*/
     char target_lane;
     float lane_change_progress;
     bool is_changing_lane;
@@ -139,7 +138,6 @@ typedef struct
     bool is_braking;
     float target_speed;
 
-    bool has_priority; // приоритет пересечения перекрестка
     bool is_turning;
     TurnDirection turn_direction;
     float turn_progress;
@@ -151,16 +149,10 @@ typedef struct
     float turn_start_y;          // Начальная Y-координата при начале поворота
     float current_display_angle; // Текущий угол поворота для отрисовки машины
 
-    // float start_display_angle;; // Начальный угол поворота для отрисовки машины
-
     int original_direction; // Для запоминания исходного направления при повороте
     int original_lane;      // Для запоминания исходной полосы при повороте
 
-    //bool GhostCar; // Флаг для фантомной машины (голова списка)
-
     bool in_intersection;      // Находится ли машина на перекрестке
-    bool entered_on_green;     // Въехала ли машина на зеленый
-    bool just_have_turn;       // Только что повернула
 
 } AdvancedCar2;
 

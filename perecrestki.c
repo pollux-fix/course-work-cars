@@ -2384,13 +2384,7 @@ void updateCars()
                 // Проверяем, находится ли машина на перекрестке
                 bool in_intersection_now = (fabs(car->x) < intersection_size + 0.5 && 
                                            fabs(car->y) < intersection_size + 0.5);
-                
-                // // Если машина только что въехала на перекресток
-                // if (in_intersection_now && !car->in_intersection)
-                // {
-                //     car->entered_on_green = !checkTrafficLightForCar(car);
-                // }
-                
+                                
                 car->in_intersection = in_intersection_now;
                 
                 // Проверяем столкновения
@@ -2703,8 +2697,6 @@ void addCrossroadCar()
     }
 
     new_car.in_intersection = false; 
-    new_car.entered_on_green = false; 
-    new_car.just_have_turn = false; 
     new_car.direction = cross_direction;
     new_car.lane = lane;
     new_car.original_direction = cross_direction;
@@ -2712,7 +2704,6 @@ void addCrossroadCar()
 
     new_car.is_braking = false;
     new_car.in_intersection = false;
-    new_car.has_priority = true;
     new_car.max_speed = MIN_SPEED + (rand() % (int)((MAX_SPEED - MIN_SPEED) * 100)) * 0.01;
     new_car.speed = new_car.max_speed * 0.6;
     
@@ -2728,7 +2719,6 @@ void addCrossroadCar()
     new_car.turn_progress = 0.0;
     new_car.will_turn = false;
     new_car.road_id = road_id;
-    new_car.just_have_turn = false;
 
     if (road_id == 0)
         new_car.current_display_angle = (direction_val == 1) ? 0 : 180;
